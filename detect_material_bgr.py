@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--limit",
         type=int,
-        help="Process only the first N images after sorting. Use --limit 1 for prompt checks.",
+        help="Process a bounded prefix of sorted images for prompt checks.",
     )
     parser.add_argument("--label", default=DEFAULT_LABEL)
     parser.add_argument(
@@ -121,7 +121,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--min-relative-score",
         type=float,
-        help="Reject candidates whose score is below this fraction of the top kept score.",
+        help="Reject candidates whose score is below the configured relative score fraction.",
     )
     parser.add_argument("--score-threshold-detection", type=float, default=0.2)
     parser.add_argument("--new-det-thresh", type=float, default=0.3)

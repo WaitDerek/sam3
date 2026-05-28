@@ -20,6 +20,24 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent
+CONFIG_PATH = ROOT / "configs" / "object_segmentation_params.json"
+
+
+def load_cleanup_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {}
+    return json.loads(CONFIG_PATH.read_text(encoding="utf-8")).get("cleanup", {})
+
+
+def load_prefix_overrides(config_key: str, value_key: str) -> dict[tuple[str, str], float]:
+    overrides = {}
+    for item in load_cleanup_config().get(config_key, []):
+        material = item.get("material")
+        prefix = item.get("stem_prefix")
+        value = item.get(value_key)
+        if material and prefix and value is not None:
+            overrides[(material, prefix)] = float(value)
+    return overrides
 
 PURE_CONTAINER_BLACKLIST = {
     "gray plastic storage crate",
@@ -44,16 +62,13 @@ MIN_SCORE = {
 }
 
 
-# Per-material upper bound on bbox_fill_fraction. For the wiper bin views the
-# gray plastic comb-rack scores well but produces masks that fill 18%+ of
-# their bbox, while real thin curved rubber blades sit at 5-15%. Set via
-# prefix overrides so the table_view close-ups stay unaffected.
+# Per-material upper bound on bbox_fill_fraction. Prefix-specific overrides are
+# loaded from configs/object_segmentation_params.json so capture identifiers do
+# not live in script code.
 MAX_BBOX_FILL: dict[str, float] = {}
-
-MAX_BBOX_FILL_PREFIX_OVERRIDES = {
-    ("passenger_wiper_1113", "20260521_153324"): 0.18,
-    ("passenger_wiper_1113", "20260521_154208"): 0.18,
-}
+MAX_BBOX_FILL_PREFIX_OVERRIDES = load_prefix_overrides(
+    "bbox_fill_prefix_overrides", "max_bbox_fill"
+)
 
 
 def max_bbox_fill_for(material: str, stem: str = "") -> float:
@@ -89,29 +104,11 @@ MAX_AREA_FRAC = {
     "warning_triangle_486": 0.15,
 }
 
-# Prefix overrides — close-up table_view shots have the part filling 20-40% of
-# the frame, so the conservative bin-view caps would drop valid detections.
-# Keys are (material, image_stem prefix); values override MAX_AREA_FRAC.
-PREFIX_AREA_OVERRIDES = {
-    ("fresh_air_vent", "20260521_143611"): 0.45,
-    ("fresh_air_vent", "20260521_144208"): 0.45,
-    ("fresh_air_vent", "20260521_144718"): 0.45,
-    ("bumper_624", "20260521_112611"): 0.10,
-    ("bumper_624", "20260521_113058"): 0.10,
-    ("bumper_624", "20260521_113346"): 0.10,
-    ("bumper_624", "20260521_113506"): 0.20,
-    ("bumper_624", "20260522_133438"): 0.10,
-    ("power_tailgate_system_854", "20260521_140702"): 0.20,
-    ("power_tailgate_system_854", "20260521_141129"): 0.20,
-    ("power_tailgate_system_854", "20260521_141640"): 0.20,
-    ("power_tailgate_system_854", "20260521_142146"): 0.20,
-    ("air_filter", "20260522_114115"): 0.08,
-    ("air_filter", "20260522_114208"): 0.08,
-    ("washer_filler_769", "20260520_165857"): 0.05,
-    ("washer_filler_769", "20260520_165906"): 0.05,
-    ("passenger_wiper_1113", "20260521_153324"): 0.022,
-    ("passenger_wiper_1113", "20260521_154208"): 0.022,
-}
+# Prefix overrides are maintained in JSON config because they are parameters,
+# not cleanup algorithm logic.
+PREFIX_AREA_OVERRIDES = load_prefix_overrides(
+    "prefix_area_overrides", "max_area_frac"
+)
 
 
 def cap_for(material: str, stem: str) -> float:

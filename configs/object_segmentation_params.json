@@ -58,6 +58,20 @@
       "screw_cover": 0.02,
       "warning_triangle_486": 0.15
     },
+    "bbox_fill_prefix_overrides": [
+      {
+        "material": "passenger_wiper_1113",
+        "stem_prefix": "20260521_153324",
+        "max_bbox_fill": 0.18,
+        "reason": "bin view: reject dense comb-rack masks while preserving thin blade masks"
+      },
+      {
+        "material": "passenger_wiper_1113",
+        "stem_prefix": "20260521_154208",
+        "max_bbox_fill": 0.18,
+        "reason": "bin view: reject dense comb-rack masks while preserving thin blade masks"
+      }
+    ],
     "prefix_area_overrides": [
       {
         "material": "fresh_air_vent",
