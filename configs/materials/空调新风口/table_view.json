@@ -1,0 +1,16 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260521_143611",
+    "20260521_144208",
+    "20260521_144718"
+  ],
+  "prompts": [
+    "black plastic air duct",
+    "black rectangular plastic vent duct",
+    "black automotive plastic duct housing",
+    "black plastic box with rectangular opening",
+    "black car ventilation duct"
+  ],
+  "scene": "single_object"
+}

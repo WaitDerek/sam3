@@ -151,3 +151,16 @@ Thumbs.db
 # BPE vocabulary files
 *.bpe
 *.vocab
+
+# Local material data and generated outputs
+/data
+/[c]hangan
+/out
+
+# Local one-off image lists for targeted repair/check runs
+/configs/*.txt
+
+/.omx
+/.agents
+/.claude
+/.codex

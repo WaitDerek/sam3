@@ -1,0 +1,500 @@
+{
+  "version": 1,
+  "purpose": "Material-level detection provenance and reproducibility registry. Keep one entry per material whenever a material uses staged prompts, range-specific thresholds, or post-detection repair modules.",
+  "materials": {
+    "passenger_wiper_1113": {
+      "label": "副雨刮器",
+      "source_dir": "data/副雨刮器总成_1113/bgr",
+      "output_dir": "out/passenger_wiper_1100",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 副雨刮器",
+      "artifact_format": {
+        "overlay": "out/passenger_wiper_1100/overlays/<stem>_det.jpg",
+        "mask": "out/passenger_wiper_1100/masks/<stem>_mask.png",
+        "metadata": "out/passenger_wiper_1100/metadata/<stem>.json"
+      },
+      "stages": [
+        {
+          "name": "table_view_single",
+          "scope": {
+            "prefixes": [
+              "20260521_150935",
+              "20260521_151421",
+              "20260521_151819",
+              "20260522_150935",
+              "20260522_151421"
+            ]
+          },
+          "module": "sam_text_prompt_single_or_pair",
+          "reason": "Open-table single/paired wipers segment cleanly with the original wiper prompts; no contact/bin-specific filtering is needed.",
+          "thresholds": {
+            "min_score": 0.35,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.08,
+            "max_bbox_fill_frac": 0.55,
+            "iou_dedup": 0.4,
+            "score_threshold_detection": 0.2,
+            "new_det_thresh": 0.3
+          },
+          "prompts": [
+            "black automotive windshield wiper blade",
+            "passenger side windshield wiper blade",
+            "black rubber windshield wiper blade assembly",
+            "curved black car wiper blade",
+            "front windshield wiper blade"
+          ],
+          "command_template": "python detect_material_bgr.py --input-dir data/副雨刮器总成_1113/bgr --output-dir out/passenger_wiper_1100 --label 副雨刮器 --min-score 0.35 --min-area-frac 0.0003 --max-area-frac 0.08 --max-bbox-fill-frac 0.55 --iou-dedup 0.4 --score-threshold-detection 0.2 --new-det-thresh 0.3 --include-prefix <table prefix> --text-prompt ...",
+          "do_not_reprocess_when": "Existing single/table overlays have acceptable boundaries; only rerun to restore missing files or after a deliberate prompt change."
+        },
+        {
+          "name": "table_view_manual_pair_repair",
+          "scope": {
+            "image_list": "configs/passenger_wiper_table_manual_repair.txt",
+            "stems": [
+              "20260521_151819__000148"
+            ]
+          },
+          "module": "sam_text_prompt_table_pair_repair_two_instance_cap",
+          "reason": "Frame 20260521_151819__000148 contains two table-view wipers. The generic table prompts selected only the foreground angled blade, so this repair uses rear-horizontal/table prompts and caps the output at two high-score blade instances.",
+          "thresholds": {
+            "min_score": 0.02,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.06,
+            "max_bbox_fill_frac": 0.65,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.0,
+            "new_det_thresh": 0.01,
+            "max_instances": 2
+          },
+          "prompts": [
+            "long black horizontal windshield wiper blade at the back of the green table",
+            "rear horizontal black windshield wiper blade only",
+            "black straight wiper blade with rectangular center connector on table",
+            "black rubber blade lying horizontally near the wall",
+            "two black windshield wiper blades on green table",
+            "single black windshield wiper blade on green table only"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_151819__000148",
+              "expected": "two table-view wiper detections; rear horizontal blade recovered and table noise excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_153324_pre_contact",
+          "scope": {
+            "prefixes": [
+              "20260521_153324"
+            ],
+            "max_stem": "20260521_153324__000224"
+          },
+          "module": "sam_text_prompt_bin_two_instance_cap",
+          "reason": "Earlier bin frames do not show the recurring bottom-rack false positive seen after 000225. Keep the broader two-wiper prompt set and cap output at two instances.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.08,
+            "max_bbox_fill_frac": 0.55,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 2
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "two separate black curved windshield wiper blades only, not gray crate dividers",
+            "separate passenger windshield wiper blades not plastic storage rack",
+            "two long black rubber wiper blades, exclude crate bars and teeth",
+            "black windshield wiper blade inside gray plastic crate"
+          ]
+        },
+        {
+          "name": "bin_view_153324_contact_from_000225",
+          "scope": {
+            "prefixes": [
+              "20260521_153324"
+            ],
+            "min_stem": "20260521_153324__000225"
+          },
+          "module": "sam_text_prompt_contact_split_filter",
+          "reason": "From 20260521_153324__000225 onward, the broad two-wiper prompt often merges both wipers with the bottom crate rack. This stage uses single-blade-only prompts, tight area filtering, and two-instance capping.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.025,
+            "max_bbox_fill_frac": 0.35,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 2
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "single black windshield wiper blade only",
+            "thin black rubber windshield wiper blade only",
+            "black wiper blade not gray crate rack"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_153324__000225",
+              "expected": "two single-blade detections; no bottom crate rack mask"
+            },
+            {
+              "stem": "20260521_153324__000247",
+              "expected": "two vertical blade detections; top/bottom rack teeth excluded"
+            },
+            {
+              "stem": "20260521_153324__000329",
+              "expected": "two separated curved blade detections"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_153324_horizontal_overlap_000321",
+          "scope": {
+            "prefixes": [
+              "20260521_153324"
+            ],
+            "min_stem": "20260521_153324__000321",
+            "max_stem": "20260521_153324__000321"
+          },
+          "module": "sam_text_prompt_horizontal_overlap_split",
+          "reason": "Frame 000321 has two horizontal/arched wipers. The generic contact profile kept a low-score vertical slot/bed rail false positive and missed the upper wiper; horizontal arched-blade prompts recover both wipers.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.025,
+            "max_bbox_fill_frac": 0.45,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 2
+          },
+          "prompts": [
+            "black horizontal curved windshield wiper blade only",
+            "black curved wiper blade with central hinge only",
+            "single black curved rubber wiper blade on crate floor",
+            "black arched windshield wiper rubber strip only"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_153324__000321",
+              "expected": "two horizontal blade detections; vertical crate slots excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_153324_late_single_empty_repair",
+          "scope": {
+            "image_list": "configs/passenger_wiper_153324_late_empty.txt",
+            "stems": [
+              "20260521_153324__000581",
+              "20260521_153324__000582",
+              "20260521_153324__000587",
+              "20260521_153324__000588",
+              "20260521_153324__000589",
+              "20260521_153324__000592",
+              "20260521_153324__000593",
+              "20260521_153324__000594"
+            ]
+          },
+          "module": "sam_text_prompt_late_single_horizontal_repair",
+          "reason": "Late 153324 frames contain one visible horizontal wiper. The contact profile returned empty; horizontal arched-blade prompts recover the blade but may also propose a vertical slot, so this repair keeps only the top instance.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.025,
+            "max_bbox_fill_frac": 0.45,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 1
+          },
+          "prompts": [
+            "black horizontal curved windshield wiper blade only",
+            "black curved wiper blade with central hinge only",
+            "single black curved rubber wiper blade on crate floor",
+            "black arched windshield wiper rubber strip only"
+          ]
+        },
+        {
+          "name": "bin_view_153324_late_bin_two_wipers_000513_000530",
+          "scope": {
+            "prefixes": [
+              "20260521_153324"
+            ],
+            "min_stem": "20260521_153324__000513",
+            "max_stem": "20260521_153324__000530"
+          },
+          "module": "sam_text_prompt_late_bin_two_content_relative_score",
+          "reason": "Frames 000513-000530 contain two vertical wipers in the crate. Broader bin prompts can also fire on the toothed crate rail, so this stage keeps at most two candidates and drops candidates below 45% of the top score.",
+          "thresholds": {
+            "min_score": 0.02,
+            "min_area_frac": 0.0002,
+            "max_area_frac": 0.035,
+            "max_bbox_fill_frac": 0.5,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.02,
+            "new_det_thresh": 0.06,
+            "max_instances": 2,
+            "min_relative_score": 0.45
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "single windshield wiper blade only",
+            "light gray or black windshield wiper blade only",
+            "long narrow automotive wiper blade with rubber strip only",
+            "vertical windshield wiper blade inside crate only",
+            "black horizontal curved windshield wiper blade only",
+            "black arched windshield wiper rubber strip only",
+            "curved windshield wiper blade with center connector only, not crate rack teeth"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_153324__000520",
+              "expected": "two vertical wiper detections; upper and lower toothed crate rails excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_153324_late_bin_single_wiper_from_000532",
+          "scope": {
+            "prefixes": [
+              "20260521_153324"
+            ],
+            "min_stem": "20260521_153324__000532"
+          },
+          "module": "sam_text_prompt_late_bin_single_content_relative_score",
+          "reason": "From 000532 onward only the best content detection is kept. This removes recurring false detections on crate bottom strips and card slots while preserving the visible wiper.",
+          "thresholds": {
+            "min_score": 0.02,
+            "min_area_frac": 0.0002,
+            "max_area_frac": 0.035,
+            "max_bbox_fill_frac": 0.5,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.02,
+            "new_det_thresh": 0.06,
+            "max_instances": 1,
+            "min_relative_score": 0.45
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "single windshield wiper blade only",
+            "light gray or black windshield wiper blade only",
+            "long narrow automotive wiper blade with rubber strip only",
+            "vertical windshield wiper blade inside crate only",
+            "black horizontal curved windshield wiper blade only",
+            "black arched windshield wiper rubber strip only",
+            "curved windshield wiper blade with center connector only, not crate rack teeth"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_153324__000532",
+              "expected": "one vertical wiper detection; upper toothed crate rail excluded"
+            },
+            {
+              "stem": "20260521_153324__000608",
+              "expected": "one vertical wiper detection; horizontal crate floor strip excluded"
+            },
+            {
+              "stem": "20260521_153324__000640",
+              "expected": "one horizontal wiper detection; side card slots excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_154208_pre_000081",
+          "scope": {
+            "prefixes": [
+              "20260521_154208"
+            ],
+            "max_stem": "20260521_154208__000080"
+          },
+          "module": "sam_text_prompt_bin_two_instance_cap",
+          "reason": "Early second-bin sequence remains compatible with the broader two-wiper prompt set.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.08,
+            "max_bbox_fill_frac": 0.55,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 2
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "two separate black curved windshield wiper blades only, not gray crate dividers",
+            "separate passenger windshield wiper blades not plastic storage rack",
+            "two long black rubber wiper blades, exclude crate bars and teeth",
+            "black windshield wiper blade inside gray plastic crate"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_154208__000074",
+              "expected": "two long blade detections; crate ribs excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_154208_clean_000081_000152",
+          "scope": {
+            "prefixes": [
+              "20260521_154208"
+            ],
+            "min_stem": "20260521_154208__000081",
+            "max_stem": "20260521_154208__000152"
+          },
+          "module": "sam_text_prompt_arched_two_content_relative_score",
+          "reason": "Frames 000081-000152 showed merged detections on toothed crate rails and false horizontal crate-bottom/card-slot masks. Arched single-blade prompts plus two-instance and relative-score filtering keep the two wipers while dropping lower-ranked crate structures.",
+          "thresholds": {
+            "min_score": 0.02,
+            "min_area_frac": 0.0002,
+            "max_area_frac": 0.03,
+            "max_bbox_fill_frac": 0.45,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.02,
+            "new_det_thresh": 0.06,
+            "max_instances": 2,
+            "min_relative_score": 0.45
+          },
+          "prompts": [
+            "single windshield wiper blade only",
+            "black curved rubber wiper blade only",
+            "black arched windshield wiper rubber strip only",
+            "curved windshield wiper blade with center connector only, not crate rack teeth",
+            "long narrow automotive wiper blade with rubber strip only"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_154208__000081",
+              "expected": "two curved wiper detections; toothed crate rails excluded"
+            },
+            {
+              "stem": "20260521_154208__000125",
+              "expected": "two horizontal wiper detections; rectangular rack frame excluded"
+            },
+            {
+              "stem": "20260521_154208__000152",
+              "expected": "two curved wiper detections; lower toothed crate rail excluded"
+            }
+          ]
+        },
+        {
+          "name": "bin_view_154208_post_000152",
+          "scope": {
+            "prefixes": [
+              "20260521_154208"
+            ],
+            "min_stem": "20260521_154208__000153"
+          },
+          "module": "sam_text_prompt_bin_two_instance_cap",
+          "reason": "Post-000152 frames keep the existing broader second-bin profile unless a later targeted audit identifies another failure span.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_area_frac": 0.0003,
+            "max_area_frac": 0.08,
+            "max_bbox_fill_frac": 0.55,
+            "iou_dedup": 0.25,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.08,
+            "max_instances": 2
+          },
+          "prompts": [
+            "black curved rubber wiper blade only",
+            "two separate black curved windshield wiper blades only, not gray crate dividers",
+            "separate passenger windshield wiper blades not plastic storage rack",
+            "two long black rubber wiper blades, exclude crate bars and teeth",
+            "black windshield wiper blade inside gray plastic crate"
+          ]
+        },
+        {
+          "name": "manual_issue_repair",
+          "scope": {
+            "image_list": "configs/passenger_wiper_manual_issue_repair.txt",
+            "stems": [
+              "20260521_154208__000197",
+              "20260521_154208__000027",
+              "20260521_153324__000341",
+              "20260521_153324__000342",
+              "20260521_153324__000343",
+              "20260521_153324__000344",
+              "20260521_153324__000345",
+              "20260521_153324__000231",
+              "20260521_153324__000232",
+              "20260521_153324__000350",
+              "20260521_153324__000351"
+            ]
+          },
+          "module": "sam_text_prompt_manual_issue_repair_two_content_relative_score",
+          "reason": "User-flagged frames still showed crate bottom, toothed rack, or merged crate structures. This final image-list repair uses narrow single/arched wiper prompts and two-instance relative-score filtering so full rebuilds overwrite the broader profiles for these frames.",
+          "thresholds": {
+            "min_score": 0.02,
+            "min_area_frac": 0.0002,
+            "max_area_frac": 0.03,
+            "max_bbox_fill_frac": 0.45,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.02,
+            "new_det_thresh": 0.06,
+            "max_instances": 2,
+            "min_relative_score": 0.45
+          },
+          "prompts": [
+            "single windshield wiper blade only",
+            "black curved rubber wiper blade only",
+            "light gray or black windshield wiper blade only",
+            "black arched windshield wiper rubber strip only",
+            "curved windshield wiper blade with center connector only, not crate rack teeth",
+            "long narrow automotive wiper blade with rubber strip only",
+            "vertical windshield wiper blade inside crate only"
+          ],
+          "validation_examples": [
+            {
+              "stem": "20260521_153324__000343",
+              "expected": "two vertical wiper detections; lower toothed rail excluded"
+            },
+            {
+              "stem": "20260521_154208__000027",
+              "expected": "two horizontal wiper detections; rack frame excluded"
+            },
+            {
+              "stem": "20260521_154208__000197",
+              "expected": "two overlapping curved wiper detections; crate rack excluded"
+            },
+            {
+              "stem": "20260521_153324__000232",
+              "expected": "two vertical wiper detections; left gray blade recovered"
+            },
+            {
+              "stem": "20260521_153324__000350",
+              "expected": "two vertical wiper detections; horizontal crate strip excluded"
+            }
+          ]
+        }
+      ],
+      "rebuild_notes": [
+        "Do not use --clean for exploratory reruns unless the entire material will be rebuilt afterward.",
+        "For targeted fixes, use --include-prefix with --min-stem/--max-stem so stable single/table detections are not overwritten.",
+        "Current special CLI support added for reproducibility: detect_material_bgr.py accepts --max-instances, --min-relative-score, --min-stem, --max-stem, and --image-list; run_material_segmentation.py forwards these profile fields.",
+        "Scene-specific parameters are stored as separate JSON files under configs/materials/副雨刮器; use --label 副雨刮器 for the pure material label."
+      ],
+      "material_name": "副雨刮器",
+      "parameter_dir": "configs/materials/副雨刮器",
+      "parameter_files": [
+        "configs/materials/副雨刮器/table_view.json",
+        "configs/materials/副雨刮器/table_view_manual_pair_repair.json",
+        "configs/materials/副雨刮器/bin_view_153324_pre_contact.json",
+        "configs/materials/副雨刮器/bin_view_153324_contact_from_000225.json",
+        "configs/materials/副雨刮器/bin_view_153324_horizontal_overlap_000321.json",
+        "configs/materials/副雨刮器/bin_view_153324_late_single_empty_repair.json",
+        "configs/materials/副雨刮器/bin_view_153324_late_bin_two_wipers_000513_000530.json",
+        "configs/materials/副雨刮器/bin_view_153324_late_bin_single_wiper_from_000532.json",
+        "configs/materials/副雨刮器/bin_view_154208_pre_000081.json",
+        "configs/materials/副雨刮器/bin_view_154208_clean_000081_000152.json",
+        "configs/materials/副雨刮器/bin_view_154208_post_000152.json",
+        "configs/materials/副雨刮器/manual_issue_repair.json"
+      ]
+    }
+  }
+}

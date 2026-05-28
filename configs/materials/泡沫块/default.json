@@ -1,0 +1,12 @@
+{
+  "name": "default",
+  "prompts": [
+    "black foam block",
+    "black rectangular foam packaging block",
+    "small black sponge foam block",
+    "black square foam pad",
+    "black automotive packaging foam block"
+  ],
+  "threshold_overrides": {},
+  "scene": "default"
+}

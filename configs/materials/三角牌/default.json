@@ -1,0 +1,13 @@
+{
+  "name": "default",
+  "prompts": [
+    "red rectangular emergency warning triangle case",
+    "red warning triangle storage case",
+    "red plastic automotive warning triangle box",
+    "red long rectangular hazard triangle case",
+    "red car emergency triangle case",
+    "red rectangular object"
+  ],
+  "threshold_overrides": {},
+  "scene": "default"
+}

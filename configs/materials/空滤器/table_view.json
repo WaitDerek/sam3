@@ -1,0 +1,17 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260522_110851",
+    "20260522_111439",
+    "20260522_112020",
+    "20260522_112546"
+  ],
+  "prompts": [
+    "black automotive air filter housing",
+    "black plastic air cleaner assembly",
+    "black corrugated air intake hose attached to air filter housing",
+    "black plastic engine air intake duct assembly",
+    "black automotive air cleaner duct"
+  ],
+  "scene": "single_object"
+}

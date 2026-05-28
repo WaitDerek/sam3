@@ -1,0 +1,17 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260521_140702",
+    "20260521_141129",
+    "20260521_141640",
+    "20260521_142146"
+  ],
+  "prompts": [
+    "black rectangular automotive control module with mounting tabs",
+    "black power tailgate control module",
+    "black plastic automotive electronic control unit",
+    "black tailgate automatic opening control box",
+    "small black rectangular car module with label"
+  ],
+  "scene": "single_object"
+}

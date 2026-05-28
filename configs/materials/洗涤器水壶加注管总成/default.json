@@ -1,0 +1,13 @@
+{
+  "name": "default",
+  "prompts": [
+    "white plastic washer fluid filler neck with blue cap",
+    "windshield washer fluid filler neck",
+    "washer fluid filler pipe assembly",
+    "blue capped washer fluid filler pipe",
+    "white plastic automotive filler tube",
+    "white plastic windshield washer filler tube"
+  ],
+  "threshold_overrides": {},
+  "scene": "default"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "close_view",
+  "threshold_overrides": {
+    "min_score": 0.45
+  },
+  "sequence_prefixes": [
+    "20260521_104853",
+    "20260521_105227",
+    "20260521_105550"
+  ],
+  "prompts": [
+    "black rectangular automotive switch module",
+    "small black plastic car switch module",
+    "black plastic automotive electrical switch with white connector",
+    "black automotive power window switch",
+    "small black and white plastic component",
+    "small black and white car switch"
+  ],
+  "scene": "single_object"
+}

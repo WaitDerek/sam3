@@ -1,0 +1,23 @@
+{
+  "name": "bin_view_153324_contact_from_000225",
+  "threshold_overrides": {
+    "min_score": 0.05,
+    "max_area_frac": 0.025,
+    "max_bbox_fill_frac": 0.35,
+    "iou_dedup": 0.25,
+    "score_threshold_detection": 0.03,
+    "new_det_thresh": 0.08,
+    "max_instances": 2
+  },
+  "sequence_prefixes": [
+    "20260521_153324"
+  ],
+  "min_stem": "20260521_153324__000225",
+  "prompts": [
+    "black curved rubber wiper blade only",
+    "single black windshield wiper blade only",
+    "thin black rubber windshield wiper blade only",
+    "black wiper blade not gray crate rack"
+  ],
+  "scene": "contact"
+}

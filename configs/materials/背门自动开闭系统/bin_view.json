@@ -1,0 +1,17 @@
+{
+  "name": "bin_view",
+  "threshold_overrides": {
+    "min_score": 0.25
+  },
+  "sequence_prefixes": [
+    "20260521_142012",
+    "20260521_142446"
+  ],
+  "prompts": [
+    "black rectangular automotive control module in cardboard crate",
+    "black power tailgate control module in storage box",
+    "black plastic automotive electronic control unit in cardboard tray",
+    "small black rectangular car module with label in crate"
+  ],
+  "scene": "container"
+}

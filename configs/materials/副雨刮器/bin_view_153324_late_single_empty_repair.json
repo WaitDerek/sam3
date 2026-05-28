@@ -1,0 +1,20 @@
+{
+  "name": "bin_view_153324_late_single_empty_repair",
+  "threshold_overrides": {
+    "min_score": 0.05,
+    "max_area_frac": 0.025,
+    "max_bbox_fill_frac": 0.45,
+    "iou_dedup": 0.25,
+    "score_threshold_detection": 0.03,
+    "new_det_thresh": 0.08,
+    "max_instances": 1
+  },
+  "image_list": "configs/passenger_wiper_153324_late_empty.txt",
+  "prompts": [
+    "black horizontal curved windshield wiper blade only",
+    "black curved wiper blade with central hinge only",
+    "single black curved rubber wiper blade on crate floor",
+    "black arched windshield wiper rubber strip only"
+  ],
+  "scene": "container"
+}

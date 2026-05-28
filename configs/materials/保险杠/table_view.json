@@ -1,0 +1,17 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260521_112611",
+    "20260521_113058",
+    "20260521_113346",
+    "20260521_113506"
+  ],
+  "prompts": [
+    "small black plastic automotive bumper bracket",
+    "black plastic bumper mounting bracket",
+    "black automotive bumper support part",
+    "small black plastic car bracket with holes",
+    "black plastic bumper component"
+  ],
+  "scene": "single_object"
+}

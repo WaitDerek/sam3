@@ -1,0 +1,22 @@
+{
+  "name": "table_pair_late_repair",
+  "threshold_overrides": {
+    "min_score": 0.1,
+    "min_area_frac": 0.001,
+    "max_area_frac": 0.18,
+    "max_bbox_fill_frac": 0.9,
+    "iou_dedup": 0.25,
+    "score_threshold_detection": 0.02,
+    "new_det_thresh": 0.05,
+    "max_instances": 2
+  },
+  "image_list": "configs/fresh_air_vent_table_pair_late_repair.txt",
+  "prompts": [
+    "two black plastic air vent ducts on green table",
+    "right side black plastic air vent duct on green table",
+    "left and right black automotive air duct housings",
+    "black rectangular plastic vent duct on green table",
+    "black plastic air duct housing only"
+  ],
+  "scene": "contact_table_pair"
+}

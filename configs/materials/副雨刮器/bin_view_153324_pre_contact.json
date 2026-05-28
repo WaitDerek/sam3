@@ -1,0 +1,22 @@
+{
+  "name": "bin_view_153324_pre_contact",
+  "threshold_overrides": {
+    "min_score": 0.05,
+    "iou_dedup": 0.25,
+    "score_threshold_detection": 0.03,
+    "new_det_thresh": 0.08,
+    "max_instances": 2
+  },
+  "sequence_prefixes": [
+    "20260521_153324"
+  ],
+  "max_stem": "20260521_153324__000224",
+  "prompts": [
+    "black curved rubber wiper blade only",
+    "two separate black curved windshield wiper blades only, not gray crate dividers",
+    "separate passenger windshield wiper blades not plastic storage rack",
+    "two long black rubber wiper blades, exclude crate bars and teeth",
+    "black windshield wiper blade inside gray plastic crate"
+  ],
+  "scene": "contact"
+}

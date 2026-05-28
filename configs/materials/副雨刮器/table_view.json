@@ -1,0 +1,18 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260521_150935",
+    "20260521_151421",
+    "20260521_151819",
+    "20260522_150935",
+    "20260522_151421"
+  ],
+  "prompts": [
+    "black automotive windshield wiper blade",
+    "passenger side windshield wiper blade",
+    "black rubber windshield wiper blade assembly",
+    "curved black car wiper blade",
+    "front windshield wiper blade"
+  ],
+  "scene": "single_object"
+}
