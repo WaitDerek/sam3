@@ -11,7 +11,7 @@ from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 
 
-DEFAULT_DATASET_DIR = Path("/home/xue/workspace/realsense/sam3demo")
+DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "sam3demo"
 DEFAULT_BOX = (760, 350, 990, 510)
 DEFAULT_INTRINSICS = {
     "width": 1280,

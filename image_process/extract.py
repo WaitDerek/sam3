@@ -8,16 +8,16 @@ import cv2
 import numpy as np
 
 
-DEFAULT_BAG_DIR = Path("/mnt/f/data")
-DEFAULT_OUTPUT_ROOT = Path("/mnt/f/dataset")
-DEFAULT_MERGE_OUTPUT_DIR = Path("/mnt/f/dataset_merged")
+DEFAULT_BAG_DIR = Path("data")
+DEFAULT_OUTPUT_ROOT = Path("dataset")
+DEFAULT_MERGE_OUTPUT_DIR = Path("dataset_merged")
 DEFAULT_MERGE_DIRS = [
     "bgr",
     "depth",
 ]
 
-# Keep the historical intrinsics used by this workspace as a fallback. If a bag
-# reports aligned color intrinsics successfully, those values are written instead.
+# Fallback camera intrinsics. If a bag reports aligned color intrinsics
+# successfully, those values are written instead.
 DEFAULT_INTRINSICS = {
     "width": 1280,
     "height": 720,
@@ -99,8 +99,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Merge mode: optional name for the merged dataset folder. "
-            "Example: --merge-output /mnt/f --merge-name merged_demo creates "
-            "/mnt/f/merged_demo."
+            "Example: --merge-output ./out --merge-name merged_demo creates "
+            "./out/merged_demo."
         ),
     )
     parser.add_argument(
@@ -382,8 +382,8 @@ def copy_file_resumable(src: Path, dst: Path, overwrite: bool) -> str:
             shutil.copyfile(src, dst)
             return "overwritten"
         return "skipped_existing"
-    # Do not use shutil.copy2 here. On Windows-mounted WSL paths such as /mnt/f,
-    # copying file timestamps/permission metadata may fail with PermissionError.
+    # Do not use shutil.copy2 here. On Windows-mounted paths (e.g. WSL /mnt/*
+    # drives), copying file timestamps/permission metadata may fail with PermissionError.
     shutil.copyfile(src, dst)
     return "copied"
 

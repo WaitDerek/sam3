@@ -7,6 +7,9 @@
 3. 以 `bgr/` 为准对齐 `depth/`
 4. 用 `bgr + depth` 生成彩色点云 PCD
 5. 用 SAM2/SAM3 风格流程生成目标 mask，并把 mask 映射到三维点云中高亮显示
+6. 用 Open3D 可视化生成的 PCD（交互窗口或离屏出图）
+
+下文命令默认在本目录下运行（即与脚本同级），数据集路径使用相对路径，可按需替换为自己的绝对路径。
 
 常见目录结构：
 
@@ -23,9 +26,10 @@ dataset_name/
     000000_filter.pcd
 ```
 
-Windows 路径示例：`F:\dataset`
+路径写法说明：
 
-WSL 路径示例：`/mnt/f/dataset`
+- Linux / WSL 使用 POSIX 路径，例如 `./dataset` 或 `/data/dataset`
+- Windows 原生 Python 使用 Windows 路径，例如 `.\dataset` 或 `D:\dataset`
 
 ---
 
@@ -43,9 +47,9 @@ WSL 路径示例：`/mnt/f/dataset`
 ### 抽帧
 
 ```bash
-python ~/workspace/realsense/extract.py \
-  --bag-dir /mnt/f/data/20260521_ldgb \
-  --output-root /mnt/f/dataset/20260521_ldgb \
+python extract.py \
+  --bag-dir ./data/mydataset \
+  --output-root ./dataset/mydataset \
   --save-interval 10
 ```
 
@@ -59,7 +63,7 @@ python ~/workspace/realsense/extract.py \
 输出示例：
 
 ```text
-/mnt/f/dataset/20260521_ldgb/
+./dataset/mydataset/
   bag_name/
     bgr/
     depth/
@@ -69,11 +73,11 @@ python ~/workspace/realsense/extract.py \
 ### 合并数据集
 
 ```bash
-python ~/workspace/realsense/extract.py \
+python extract.py \
   --merge \
-  --source-root /mnt/f/dataset \
-  --merge-output /mnt/f/dataset \
-  --merge-name merged_ldgb \
+  --source-root ./dataset \
+  --merge-output ./dataset \
+  --merge-name merged_demo \
   --apply
 ```
 
@@ -98,22 +102,22 @@ python ~/workspace/realsense/extract.py \
 ### 抽帧后直接合并
 
 ```bash
-python ~/workspace/realsense/extract.py \
-  --bag-dir /mnt/f/data/20260521_ldgb \
-  --output-root /mnt/f/dataset/20260521_ldgb \
+python extract.py \
+  --bag-dir ./data/mydataset \
+  --output-root ./dataset/mydataset \
   --save-interval 10 \
   --merge-after-extract \
-  --merge-output /mnt/f/dataset \
-  --merge-name merged_ldgb \
+  --merge-output ./dataset \
+  --merge-name merged_demo \
   --apply
 ```
 
 ### 重新编号
 
 ```bash
-python ~/workspace/realsense/extract.py \
+python extract.py \
   --renumber \
-  --dataset-dir /mnt/f/dataset/merged_ldgb \
+  --dataset-dir ./dataset/merged_demo \
   --start-index 0 \
   --digits 6
 ```
@@ -133,16 +137,8 @@ python ~/workspace/realsense/extract.py \
 
 ### 删除 `depth` 多余文件
 
-Windows：
-
-```powershell
-python D:\workspace\align_dataset.py F:\dataset --apply
-```
-
-WSL：
-
 ```bash
-python ~/workspace/realsense/align_dataset.py /mnt/f/dataset --apply
+python align_dataset.py ./dataset --apply
 ```
 
 常用参数：
@@ -156,7 +152,7 @@ python ~/workspace/realsense/align_dataset.py /mnt/f/dataset --apply
 如果临时也要对齐 `pcd`：
 
 ```bash
-python ~/workspace/realsense/align_dataset.py /mnt/f/dataset --targets depth pcd --apply
+python align_dataset.py ./dataset --targets depth pcd --apply
 ```
 
 ---
@@ -171,6 +167,9 @@ python ~/workspace/realsense/align_dataset.py /mnt/f/dataset --targets depth pcd
 - 把 mask 映射到三维点云中
 - 输出 CloudCompare 可打开的彩色 PCD
 - mask 对应区域在 PCD 中会被标红
+
+依赖说明：需要可导入的 SAM2 包。如果 SAM2 不在 `PYTHONPATH` 中，可在命令前临时指定，
+例如 `PYTHONPATH=/path/to/sam2`。离线加载权重可设置 `HF_HUB_OFFLINE=1`。
 
 当前输出：
 
@@ -188,9 +187,9 @@ pcd/<frame>_filter.pcd
 ### 自动分割并生成高亮点云
 
 ```bash
-PYTHONPATH=/home/xue/workspace/sam2 HF_HUB_OFFLINE=1 \
-python ~/workspace/realsense/process_image.py \
-  --dataset-dir ~/workspace/realsense/sam3demo \
+PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
+python process_image.py \
+  --dataset-dir ./sam3demo \
   --overwrite
 ```
 
@@ -207,9 +206,9 @@ sam3demo/
 ### 指定某一帧
 
 ```bash
-PYTHONPATH=/home/xue/workspace/sam2 HF_HUB_OFFLINE=1 \
-python ~/workspace/realsense/process_image.py \
-  --dataset-dir ~/workspace/realsense/sam3demo \
+PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
+python process_image.py \
+  --dataset-dir ./sam3demo \
   --frame 20260521_112611__000000 \
   --overwrite
 ```
@@ -217,9 +216,9 @@ python ~/workspace/realsense/process_image.py \
 ### 手动指定 box 或 point
 
 ```bash
-PYTHONPATH=/home/xue/workspace/sam2 HF_HUB_OFFLINE=1 \
-python ~/workspace/realsense/process_image.py \
-  --dataset-dir ~/workspace/realsense/sam3demo \
+PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
+python process_image.py \
+  --dataset-dir ./sam3demo \
   --box 760,350,990,510 \
   --point 875,425 \
   --overwrite
@@ -284,8 +283,8 @@ pcd/<frame>_filter.pcd
 ### 处理整个数据集
 
 ```bash
-python ~/workspace/realsense/bgr_depth_to_pcd.py \
-  --dataset-dir ~/workspace/realsense/sam3demo \
+python bgr_depth_to_pcd.py \
+  --dataset-dir ./sam3demo \
   --overwrite
 ```
 
@@ -298,8 +297,8 @@ pcd/<frame>.pcd
 ### 只处理一帧
 
 ```bash
-python ~/workspace/realsense/bgr_depth_to_pcd.py \
-  --dataset-dir ~/workspace/realsense/sam3demo \
+python bgr_depth_to_pcd.py \
+  --dataset-dir ./sam3demo \
   --frame 20260521_112611__000000 \
   --overwrite
 ```
@@ -317,6 +316,42 @@ python ~/workspace/realsense/bgr_depth_to_pcd.py \
 - `--max-depth`：最大保留深度，单位米
 - `--camera-frame`：保持相机坐标系
 - `--overwrite`：覆盖已有输出
+
+---
+
+## `visualize_pcd.py`
+
+功能：
+
+- 用 Open3D 打开彩色 PCD 点云
+- 支持交互窗口（可旋转、缩放、平移）
+- 支持离屏渲染出图，适合服务器无显示器或批量截图
+- 可对点云做体素下采样，缓解点数过多时的卡顿
+
+依赖：`open3d`。
+
+### 交互查看
+
+```bash
+python visualize_pcd.py ./sam3demo/pcd/20260521_112611__000000.pcd
+```
+
+### 离屏出图
+
+```bash
+python visualize_pcd.py ./sam3demo/pcd/20260521_112611__000000.pcd \
+  --screenshot ./render.png \
+  --no-window
+```
+
+常用参数：
+
+- `pcd`：要查看的 `.pcd` 文件路径
+- `--screenshot`：保存 PNG 渲染图的路径
+- `--no-window`：纯离屏渲染，需配合 `--screenshot`，无显示器时使用
+- `--point-size`：渲染点大小，默认 `1.5`
+- `--voxel-size`：体素下采样尺寸，单位米，`0` 表示不下采样
+- `--background`：背景色，`black` 或 `white`，默认 `black`
 
 ---
 
@@ -344,34 +379,34 @@ python ~/workspace/realsense/bgr_depth_to_pcd.py \
 
 ---
 
-## Windows 运行提示
+## Windows / WSL 运行提示
 
-如果在 Windows 原生 Python 中运行，路径使用 Windows 格式：
+Windows 原生 Python 使用 Windows 路径格式：
 
 ```powershell
-python D:\workspace\realsense\extract.py --bag-dir F:\data --output-root F:\dataset --save-interval 10
+python extract.py --bag-dir .\data --output-root .\dataset --save-interval 10
 ```
 
-如果通过 WSL 运行，路径使用 `/mnt/f/...`：
+通过 WSL 运行时，路径使用 POSIX 格式（Windows 盘符映射为 `/mnt/<盘符>/...`）：
 
-```powershell
-wsl.exe -d Ubuntu-24.04 bash -lc "python ~/workspace/realsense/align_dataset.py /mnt/f/dataset --apply"
+```bash
+python align_dataset.py ./dataset --apply
 ```
 
 PowerShell 多行命令使用反引号：
 
 ```powershell
-python D:\workspace\realsense\extract.py `
-  --bag-dir F:\data `
-  --output-root F:\dataset `
+python extract.py `
+  --bag-dir .\data `
+  --output-root .\dataset `
   --save-interval 10
 ```
 
 Linux/WSL 多行命令使用反斜杠：
 
 ```bash
-python ~/workspace/realsense/extract.py \
-  --bag-dir /mnt/f/data \
-  --output-root /mnt/f/dataset \
+python extract.py \
+  --bag-dir ./data \
+  --output-root ./dataset \
   --save-interval 10
 ```
