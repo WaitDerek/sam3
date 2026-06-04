@@ -1,0 +1,32 @@
+{
+  "name": "bin_view",
+  "scene": "container",
+  "sequence_prefixes": [
+    "20260521_105214",
+    "20260521_105530",
+    "20260521_105812",
+    "20260522_105018",
+    "20260522_105214",
+    "20260522_105530",
+    "20260522_105812",
+    "20260527_153146",
+    "20260527_155214"
+  ],
+  "threshold_overrides": {
+    "min_score": 0.2,
+    "min_area_frac": 0.0003,
+    "max_area_frac": 0.12,
+    "max_bbox_fill_frac": 0.97,
+    "iou_dedup": 0.25,
+    "score_threshold_detection": 0.05,
+    "new_det_thresh": 0.1,
+    "max_instances": 2,
+    "min_relative_score": 0.35
+  },
+  "prompts": [
+    "red rectangular object",
+    "red rectangular warning triangle case",
+    "red plastic warning triangle case in gray crate",
+    "red long rectangular hazard triangle case"
+  ]
+}

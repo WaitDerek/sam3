@@ -1,12 +1,20 @@
 {
   "name": "default",
+  "scene": "default",
   "prompts": [
     "black foam block",
     "black rectangular foam packaging block",
     "small black sponge foam block",
-    "black square foam pad",
-    "black automotive packaging foam block"
+    "dark foam block on table",
+    "black cube"
   ],
-  "threshold_overrides": {},
-  "scene": "default"
+  "threshold_overrides": {
+    "min_score": 0.25,
+    "min_area_frac": 0.0003,
+    "max_area_frac": 0.15,
+    "max_bbox_fill_frac": 0.97,
+    "iou_dedup": 0.4,
+    "score_threshold_detection": 0.1,
+    "new_det_thresh": 0.15
+  }
 }

@@ -1,0 +1,669 @@
+{
+  "name": "repair_profiles",
+  "scene": "repair_bundle",
+  "profiles": [
+    {
+      "name": "bin_view_141640",
+      "scene": "container",
+      "sequence_prefixes": [
+        "20260521_141640"
+      ],
+      "threshold_overrides": {
+        "min_score": 0.15,
+        "min_area_frac": 0.0004,
+        "max_area_frac": 0.022,
+        "max_bbox_fill_frac": 0.97,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.05,
+        "new_det_thresh": 0.1,
+        "max_instances": 4,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black rectangular automotive control module with mounting tabs",
+        "black power tailgate control module",
+        "small black rectangular car module with label",
+        "black ECU module with white label"
+      ]
+    },
+    {
+      "name": "table_view_140702_large_repair",
+      "scene": "single_object",
+      "threshold_overrides": {
+        "min_score": 0.2,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.08,
+        "max_bbox_fill_frac": 0.9,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.05,
+        "new_det_thresh": 0.1,
+        "max_instances": 4,
+        "min_relative_score": 0.3
+      },
+      "prompts": [
+        "black rectangular automotive control module with mounting tabs",
+        "black power tailgate control module",
+        "small black rectangular car module with label",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_140702__000326",
+        "20260521_140702__000332",
+        "20260521_140702__000333",
+        "20260521_140702__000362",
+        "20260521_140702__000363",
+        "20260521_140702__000364"
+      ]
+    },
+    {
+      "name": "bin_view_134_dim",
+      "scene": "container",
+      "sequence_prefixes": [
+        "20260527_134449",
+        "20260527_134718"
+      ],
+      "threshold_overrides": {
+        "min_score": 0.13,
+        "min_area_frac": 0.0005,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.06,
+        "max_instances": 4,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ]
+    },
+    {
+      "name": "table_view_133430_235_recall",
+      "scene": "table_repair",
+      "threshold_overrides": {
+        "min_score": 0.2,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.02,
+        "min_bbox_fill_frac": 0.25,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.05,
+        "score_threshold_detection": 0.001,
+        "new_det_thresh": 0.005,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 1
+      },
+      "prompts": [
+        "left lower black ECU module with white label on floor",
+        "front left black control module with white label",
+        "tilted black ECU module with white label at lower left",
+        "black plastic module at bottom left on green floor",
+        "small black rectangular car module with white label at lower left",
+        "single left black module with white sticker",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260527_133430__000235"
+      ]
+    },
+    {
+      "name": "table_view_134120_small_recall",
+      "scene": "table_repair",
+      "threshold_overrides": {
+        "min_score": 0.025,
+        "min_area_frac": 8e-05,
+        "max_area_frac": 0.012,
+        "min_bbox_fill_frac": 0.18,
+        "max_bbox_fill_frac": 0.95,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.001,
+        "new_det_thresh": 0.005,
+        "max_instances": 1,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 1
+      },
+      "prompts": [
+        "small black automotive ECU control module on green floor",
+        "small black rectangular plastic control module standing on green floor",
+        "small black plastic car module on green background",
+        "single black power tailgate control module on floor",
+        "small dark plastic part centered on green floor"
+      ],
+      "stems": [
+        "20260527_134120__000127",
+        "20260527_134120__000128",
+        "20260527_134120__000129",
+        "20260527_134120__000134",
+        "20260527_134120__000136"
+      ]
+    },
+    {
+      "name": "bin_view_134449_dim_repair",
+      "scene": "container",
+      "threshold_overrides": {
+        "min_score": 0.1,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.04,
+        "max_instances": 3,
+        "min_relative_score": 0.35,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000032",
+        "20260527_134449__000037",
+        "20260527_134449__000039",
+        "20260527_134449__000041",
+        "20260527_134449__000042",
+        "20260527_134449__000051",
+        "20260527_134449__000070",
+        "20260527_134449__000074",
+        "20260527_134449__000075",
+        "20260527_134449__000099",
+        "20260527_134449__000141",
+        "20260527_134449__000172",
+        "20260527_134449__000185",
+        "20260527_134449__000187",
+        "20260527_134449__000194",
+        "20260527_134449__000195",
+        "20260527_134449__000196"
+      ]
+    },
+    {
+      "name": "bin_view_134449_006_cleanup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.2,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "min_bbox_fill_frac": 0.3,
+        "max_bbox_fill_frac": 0.95,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.04,
+        "max_instances": 2,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000006"
+      ]
+    },
+    {
+      "name": "bin_view_134449_099_187_recall",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.06,
+        "min_area_frac": 0.00025,
+        "max_area_frac": 0.03,
+        "min_bbox_fill_frac": 0.25,
+        "max_bbox_fill_frac": 0.98,
+        "max_aspect": 3.5,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.08,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "two black ECU modules with white labels in cardboard storage box",
+        "left black ECU module with white label in cardboard tray",
+        "right black ECU module with white label in cardboard tray",
+        "black ECU module with white label",
+        "small dark plastic part at corner of cardboard tray",
+        "small black rectangular car module with label",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000099",
+        "20260527_134449__000187"
+      ]
+    },
+    {
+      "name": "bin_view_134449_edge_clean_074_recall",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.095,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "min_bbox_fill_frac": 0.45,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.04,
+        "max_instances": 2,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000009",
+        "20260527_134449__000026",
+        "20260527_134449__000027",
+        "20260527_134449__000028",
+        "20260527_134449__000073",
+        "20260527_134449__000074",
+        "20260527_134449__000079",
+        "20260527_134449__000080",
+        "20260527_134449__000085",
+        "20260527_134449__000094",
+        "20260527_134449__000145",
+        "20260527_134449__000150",
+        "20260527_134449__000151",
+        "20260527_134449__000177"
+      ]
+    },
+    {
+      "name": "bin_view_134449_134718_edge_clean_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.095,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "min_bbox_fill_frac": 0.45,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.04,
+        "max_instances": 2,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000171",
+        "20260527_134449__000178",
+        "20260527_134449__000179",
+        "20260527_134449__000188",
+        "20260527_134718__000047",
+        "20260527_134718__000053",
+        "20260527_134718__000054",
+        "20260527_134718__000055",
+        "20260527_134718__000056",
+        "20260527_134718__000059",
+        "20260527_134718__000060",
+        "20260527_134718__000061",
+        "20260527_134718__000062",
+        "20260527_134718__000074",
+        "20260527_134718__000077",
+        "20260527_134718__000081",
+        "20260527_134718__000083",
+        "20260527_134718__000128",
+        "20260527_134718__000149",
+        "20260527_134718__000153",
+        "20260527_134718__000154",
+        "20260527_134718__000155",
+        "20260527_134718__000201",
+        "20260527_134718__000202",
+        "20260527_134718__000203",
+        "20260527_134718__000208",
+        "20260527_134718__000223"
+      ]
+    },
+    {
+      "name": "bin_view_134449_dark_component_repair",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.095,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "max_aspect": 3.0,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.04,
+        "max_instances": 4,
+        "min_relative_score": 0.25,
+        "min_component_bbox_fill_frac": 0.45,
+        "split_components": true,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black ECU module with white label",
+        "small black rectangular car module with label",
+        "small dark plastic part at corner of cardboard tray",
+        "black power tailgate control module in storage box"
+      ],
+      "stems": [
+        "20260527_134449__000184",
+        "20260527_134449__000185",
+        "20260527_134449__000189"
+      ]
+    },
+    {
+      "name": "bin_view_134449_184_target_repair",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.5,
+        "min_area_frac": 0.0006,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.95,
+        "iou_dedup": 0.05,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 1,
+        "min_component_bbox_fill_frac": 0.45,
+        "split_components": true,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black rectangular module in lower left slot of tray",
+        "lower left black ECU module with white label in cardboard tray"
+      ],
+      "stems": [
+        "20260527_134449__000184"
+      ]
+    },
+    {
+      "name": "bin_view_134718_218_recall",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.4,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.05,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_component_bbox_fill_frac": 0.35,
+        "split_components": true,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "upper black ECU module with silver label in cardboard tray",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260527_134718__000218"
+      ]
+    },
+    {
+      "name": "bin_view_141640_cleanup_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.15,
+        "min_area_frac": 0.0004,
+        "max_area_frac": 0.022,
+        "max_bbox_fill_frac": 0.97,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.05,
+        "new_det_thresh": 0.1,
+        "max_instances": 2,
+        "min_relative_score": 0.3,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "black rectangular automotive control module with mounting tabs",
+        "black power tailgate control module",
+        "small black rectangular car module with label",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_141640__000064",
+        "20260521_141640__000070",
+        "20260521_141640__000075",
+        "20260521_141640__000111",
+        "20260521_141640__000117",
+        "20260521_141640__000119"
+      ]
+    },
+    {
+      "name": "bin_view_141640_recall_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.08,
+        "min_area_frac": 0.00035,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.01,
+        "new_det_thresh": 0.02,
+        "max_instances": 2,
+        "min_relative_score": 0.2,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "two black rectangular ECU modules in cardboard crate",
+        "black control module without label in cardboard slot",
+        "front black ECU module with silver top in cardboard crate",
+        "right edge black ECU module in cardboard slot",
+        "vertical black ECU module standing in cardboard crate",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_141640__000014",
+        "20260521_141640__000015",
+        "20260521_141640__000089",
+        "20260521_141640__000090",
+        "20260521_141640__000091",
+        "20260521_141640__000098",
+        "20260521_141640__000099"
+      ]
+    },
+    {
+      "name": "bin_view_142012_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.04,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.05,
+        "min_bbox_fill_frac": 0.25,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "two black ECU modules in cardboard crate",
+        "upper black ECU module in rear slot of cardboard crate",
+        "rear black rectangular ECU module in cardboard crate",
+        "front black ECU module with white label in cardboard crate",
+        "small black rectangular car module with label in crate",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_142012__000000",
+        "20260521_142012__000049",
+        "20260521_142012__000073"
+      ]
+    },
+    {
+      "name": "bin_view_142012_023_clean_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.04,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.05,
+        "min_bbox_fill_frac": 0.25,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "small dark plastic part at corner of cardboard tray",
+        "two black ECU modules in cardboard crate",
+        "upper black ECU module in rear slot of cardboard crate",
+        "front black ECU module with white label in cardboard crate",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_142012__000023"
+      ]
+    },
+    {
+      "name": "bin_view_142146_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.04,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.02,
+        "min_bbox_fill_frac": 0.2,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "two black ECU modules with white labels in cardboard storage box",
+        "black ECU module with white label at left side of cardboard tray",
+        "black ECU module with white label at right side of cardboard tray",
+        "black ECU module with white label at top of cardboard tray",
+        "black ECU module with white label at bottom of cardboard tray",
+        "small black control module with white label sticker in cardboard tray",
+        "black power tailgate ECU module with white label"
+      ],
+      "stems": [
+        "20260521_142146__000016",
+        "20260521_142146__000023",
+        "20260521_142146__000025",
+        "20260521_142146__000033",
+        "20260521_142146__000034",
+        "20260521_142146__000035"
+      ]
+    },
+    {
+      "name": "bin_view_142146_quality_followup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.04,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.02,
+        "min_bbox_fill_frac": 0.2,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2,
+        "fill_convex": true,
+        "fill_convex_max_ratio": 1.8
+      },
+      "prompts": [
+        "two black ECU modules with white labels in cardboard storage box",
+        "black ECU module with white label at left side of cardboard tray",
+        "black ECU module with white label at right side of cardboard tray",
+        "black ECU module with white label at top of cardboard tray",
+        "black ECU module with white label at bottom of cardboard tray",
+        "small black control module with white label sticker in cardboard tray",
+        "black power tailgate ECU module with white label"
+      ],
+      "stems": [
+        "20260521_142146__000016",
+        "20260521_142146__000034",
+        "20260521_142146__000035"
+      ]
+    },
+    {
+      "name": "bin_view_142146_028_cleanup",
+      "scene": "container_repair",
+      "threshold_overrides": {
+        "min_score": 0.15,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.02,
+        "min_bbox_fill_frac": 0.2,
+        "max_bbox_fill_frac": 0.98,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.005,
+        "new_det_thresh": 0.01,
+        "max_instances": 2,
+        "min_relative_score": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 3,
+        "mask_close_iterations": 2
+      },
+      "prompts": [
+        "small dark plastic part at corner of cardboard tray",
+        "black ECU module with white label at top of cardboard tray",
+        "black ECU module with white label at bottom of cardboard tray",
+        "black ECU module with white label"
+      ],
+      "stems": [
+        "20260521_142146__000028"
+      ]
+    }
+  ]
+}
