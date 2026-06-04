@@ -56,10 +56,21 @@ def load_parameter_files(obj: dict) -> list[dict]:
     profiles = []
     for file_ref in obj.get("parameter_files", []):
         path = resolve_config_path(file_ref)
-        profile = json.loads(path.read_text(encoding="utf-8"))
-        profile.setdefault("name", path.stem)
-        profile["parameter_file"] = str(path.relative_to(ROOT))
-        profiles.append(profile)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        parameter_file = str(path.relative_to(ROOT))
+        if "profiles" in payload:
+            defaults = {key: value for key, value in payload.items() if key != "profiles"}
+            for profile_payload in payload["profiles"]:
+                profile = dict(defaults)
+                profile.update(profile_payload)
+                profile.setdefault("name", path.stem)
+                profile["parameter_file"] = parameter_file
+                profile["parameter_group"] = path.stem
+                profiles.append(profile)
+        else:
+            payload.setdefault("name", path.stem)
+            payload["parameter_file"] = parameter_file
+            profiles.append(payload)
     if profiles:
         return profiles
     return obj.get("profiles") or ([None] if obj.get("prompts") else [])
@@ -81,14 +92,18 @@ def build_command(obj: dict, profile: dict | None = None) -> list[str]:
     prompts = profile.get("prompts") if profile else obj.get("prompts", [])
     if not prompts:
         raise ValueError(f"{obj['label']} has no prompts")
+    input_dir = profile.get("input_dir", obj["input_dir"]) if profile else obj["input_dir"]
+    output_dir = (
+        profile.get("output_dir", obj["output_dir"]) if profile else obj["output_dir"]
+    )
 
     cmd = [
         sys.executable,
         str(ROOT / "detect_material_bgr.py"),
         "--input-dir",
-        str(ROOT / obj["input_dir"]),
+        str(ROOT / input_dir),
         "--output-dir",
-        str(ROOT / obj["output_dir"]),
+        str(ROOT / output_dir),
         "--label",
         obj["label"],
         "--min-score",
@@ -107,14 +122,82 @@ def build_command(obj: dict, profile: dict | None = None) -> list[str]:
         cmd.extend(["--max-area-frac", str(thresholds["max_area_frac"])])
     if thresholds.get("max_bbox_fill_frac") is not None:
         cmd.extend(["--max-bbox-fill-frac", str(thresholds["max_bbox_fill_frac"])])
+    if thresholds.get("min_bbox_fill_frac") is not None:
+        cmd.extend(["--min-bbox-fill-frac", str(thresholds["min_bbox_fill_frac"])])
     if thresholds.get("max_instances") is not None:
         cmd.extend(["--max-instances", str(thresholds["max_instances"])])
     if thresholds.get("min_relative_score") is not None:
         cmd.extend(["--min-relative-score", str(thresholds["min_relative_score"])])
+    if thresholds.get("reject_border_touching"):
+        cmd.append("--reject-border-touching")
+    if thresholds.get("border_slack") is not None:
+        cmd.extend(["--border-slack", str(thresholds["border_slack"])])
+    if thresholds.get("max_aspect") is not None:
+        cmd.extend(["--max-aspect", str(thresholds["max_aspect"])])
+    if thresholds.get("centerline_trim"):
+        cmd.append("--centerline-trim")
+    if thresholds.get("centerline_half_height") is not None:
+        cmd.extend(
+            ["--centerline-half-height", str(thresholds["centerline_half_height"])]
+        )
+    if thresholds.get("centerline_window") is not None:
+        cmd.extend(["--centerline-window", str(thresholds["centerline_window"])])
+    if thresholds.get("centerline_min_component_area") is not None:
+        cmd.extend(
+            [
+                "--centerline-min-component-area",
+                str(thresholds["centerline_min_component_area"]),
+            ]
+        )
+    if thresholds.get("centerline_min_aspect") is not None:
+        cmd.extend(["--centerline-min-aspect", str(thresholds["centerline_min_aspect"])])
+    if thresholds.get("mask_min_x") is not None:
+        cmd.extend(["--mask-min-x", str(thresholds["mask_min_x"])])
+    if thresholds.get("mask_max_x") is not None:
+        cmd.extend(["--mask-max-x", str(thresholds["mask_max_x"])])
+    if thresholds.get("min_component_bbox_fill_frac") is not None:
+        cmd.extend(
+            [
+                "--min-component-bbox-fill-frac",
+                str(thresholds["min_component_bbox_fill_frac"]),
+            ]
+        )
+    if thresholds.get("split_components"):
+        cmd.append("--split-components")
+    if thresholds.get("kmeans_split_instances") is not None:
+        cmd.extend(
+            ["--kmeans-split-instances", str(thresholds["kmeans_split_instances"])]
+        )
+    if thresholds.get("kmeans_split_y_weight") is not None:
+        cmd.extend(
+            ["--kmeans-split-y-weight", str(thresholds["kmeans_split_y_weight"])]
+        )
+    if thresholds.get("kmeans_split_gap_kernel") is not None:
+        cmd.extend(
+            ["--kmeans-split-gap-kernel", str(thresholds["kmeans_split_gap_kernel"])]
+        )
+    if thresholds.get("fill_holes"):
+        cmd.append("--fill-holes")
+    if thresholds.get("mask_close_kernel") is not None:
+        cmd.extend(["--mask-close-kernel", str(thresholds["mask_close_kernel"])])
+    if thresholds.get("mask_close_iterations") is not None:
+        cmd.extend(
+            ["--mask-close-iterations", str(thresholds["mask_close_iterations"])]
+        )
+    if thresholds.get("fill_convex"):
+        cmd.append("--fill-convex")
+    if thresholds.get("fill_convex_max_ratio") is not None:
+        cmd.extend(
+            ["--fill-convex-max-ratio", str(thresholds["fill_convex_max_ratio"])]
+        )
 
     if profile:
+        if profile.get("pattern"):
+            cmd.extend(["--pattern", profile["pattern"]])
         if profile.get("image_list"):
             cmd.extend(["--image-list", str(resolve_config_path(profile["image_list"]))])
+        for stem in profile.get("stems", []):
+            cmd.extend(["--image-stem", stem])
         for prefix in profile.get("sequence_prefixes", []):
             cmd.extend(["--include-prefix", prefix])
         if profile.get("min_stem"):

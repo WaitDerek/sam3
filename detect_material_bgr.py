@@ -23,6 +23,8 @@ if str(ROOT) not in sys.path:
 import numpy as np
 import torch
 from PIL import Image
+from scipy import ndimage
+import cv2
 
 from sam3.model.sam3_multiplex_tracking import Sam3MultiplexTrackingWithInteractivity
 from sam3.model_builder import build_sam3_multiplex_video_predictor
@@ -89,6 +91,12 @@ def parse_args() -> argparse.Namespace:
         help="Process explicit images listed one per line. Lines may be stems, filenames, or paths.",
     )
     parser.add_argument(
+        "--image-stem",
+        action="append",
+        dest="image_stems",
+        help="Process an explicit image stem from --input-dir. Repeat for multiple stems.",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         help="Process a bounded prefix of sorted images for prompt checks.",
@@ -112,6 +120,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         help="Reject candidates whose mask fills too much of its bounding box.",
     )
+    parser.add_argument(
+        "--min-bbox-fill-frac",
+        type=float,
+        help="Reject candidates whose mask fills too little of its bounding box.",
+    )
     parser.add_argument("--iou-dedup", type=float, default=IOU_DEDUP_THRESH)
     parser.add_argument(
         "--max-instances",
@@ -122,6 +135,126 @@ def parse_args() -> argparse.Namespace:
         "--min-relative-score",
         type=float,
         help="Reject candidates whose score is below the configured relative score fraction.",
+    )
+    parser.add_argument(
+        "--reject-border-touching",
+        action="store_true",
+        help="Reject candidates whose bbox touches any image border.",
+    )
+    parser.add_argument(
+        "--border-slack",
+        type=int,
+        default=0,
+        help="Pixel slack used with --reject-border-touching.",
+    )
+    parser.add_argument(
+        "--max-aspect",
+        type=float,
+        help="Reject candidates whose bbox aspect ratio max(w,h)/min(w,h) "
+        "exceeds this (drops elongated crate-rim/edge masks).",
+    )
+    parser.add_argument(
+        "--centerline-trim",
+        action="store_true",
+        help="Trim elongated masks to a smoothed centerline band.",
+    )
+    parser.add_argument(
+        "--centerline-half-height",
+        type=int,
+        default=14,
+        help="Half-height in pixels kept around the smoothed centerline.",
+    )
+    parser.add_argument(
+        "--centerline-window",
+        type=int,
+        default=51,
+        help="Sliding median window in pixels for centerline smoothing.",
+    )
+    parser.add_argument(
+        "--centerline-min-component-area",
+        type=int,
+        default=500,
+        help="Drop smaller connected components during centerline trimming.",
+    )
+    parser.add_argument(
+        "--centerline-min-aspect",
+        type=float,
+        default=3.0,
+        help="Only trim connected components with bbox width/height above this ratio.",
+    )
+    parser.add_argument(
+        "--mask-min-x",
+        type=int,
+        help="Drop mask pixels left of this column (keep x >= value). "
+        "Used to clip a fused left-side bracket/holder out of an elongated mask.",
+    )
+    parser.add_argument(
+        "--mask-max-x",
+        type=int,
+        help="Drop mask pixels right of this column (keep x <= value).",
+    )
+    parser.add_argument(
+        "--min-component-bbox-fill-frac",
+        type=float,
+        help="Drop connected mask components whose bbox fill is below this value.",
+    )
+    parser.add_argument(
+        "--split-components",
+        action="store_true",
+        help="Save each kept connected component as its own detection instance.",
+    )
+    parser.add_argument(
+        "--kmeans-split-instances",
+        type=int,
+        help="Split one fused mask into this many instances by clustering mask "
+        "pixel coordinates. Intended for touching objects that SAM keeps as a "
+        "single connected component.",
+    )
+    parser.add_argument(
+        "--kmeans-split-y-weight",
+        type=float,
+        default=1.0,
+        help="Weight applied to y coordinates for --kmeans-split-instances.",
+    )
+    parser.add_argument(
+        "--kmeans-split-gap-kernel",
+        type=int,
+        default=0,
+        help="Remove a narrow boundary between clustered mask instances using "
+        "this dilation kernel size. 0 keeps the full mask area.",
+    )
+    parser.add_argument(
+        "--fill-holes",
+        action="store_true",
+        help="Fill enclosed holes in each kept mask (e.g. printed labels on a "
+        "solid case left as holes by the segmentation).",
+    )
+    parser.add_argument(
+        "--mask-close-kernel",
+        type=int,
+        default=0,
+        help="Square structuring-element size for binary closing of each kept "
+        "mask. 0 disables closing.",
+    )
+    parser.add_argument(
+        "--mask-close-iterations",
+        type=int,
+        default=1,
+        help="Iterations for --mask-close-kernel binary closing.",
+    )
+    parser.add_argument(
+        "--fill-convex",
+        action="store_true",
+        help="Replace each mask component with its convex hull (cleans printed "
+        "label/recess concavities on rigid rectangular cases). Guarded by "
+        "--fill-convex-max-ratio so non-convex components (e.g. two touching "
+        "cases) are left untouched.",
+    )
+    parser.add_argument(
+        "--fill-convex-max-ratio",
+        type=float,
+        default=1.35,
+        help="Only convex-hull a component when hull_area <= ratio * area.",
     )
     parser.add_argument("--score-threshold-detection", type=float, default=0.2)
     parser.add_argument("--new-det-thresh", type=float, default=0.3)
@@ -180,6 +313,161 @@ def mask_bbox(mask: np.ndarray) -> list[int] | None:
     return [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
 
 
+def connected_components(mask: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
+    height, width = mask.shape
+    seen = np.zeros(mask.shape, dtype=bool)
+    components: list[tuple[np.ndarray, np.ndarray]] = []
+    ys, xs = np.nonzero(mask)
+
+    for start_y, start_x in zip(ys, xs):
+        if seen[start_y, start_x]:
+            continue
+
+        queue = [(int(start_y), int(start_x))]
+        seen[start_y, start_x] = True
+        points_y: list[int] = []
+        points_x: list[int] = []
+
+        for y, x in queue:
+            points_y.append(y)
+            points_x.append(x)
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ny, nx = y + dy, x + dx
+                if (
+                    0 <= ny < height
+                    and 0 <= nx < width
+                    and mask[ny, nx]
+                    and not seen[ny, nx]
+                ):
+                    seen[ny, nx] = True
+                    queue.append((ny, nx))
+
+        components.append((np.array(points_y), np.array(points_x)))
+    return components
+
+
+def smooth_nan_median(values: np.ndarray, window: int) -> np.ndarray:
+    if window < 1:
+        return values
+
+    half = window // 2
+    smoothed = np.full_like(values, np.nan, dtype=float)
+    for index in range(len(values)):
+        lo = max(0, index - half)
+        hi = min(len(values), index + half + 1)
+        valid = values[lo:hi]
+        valid = valid[~np.isnan(valid)]
+        if len(valid):
+            smoothed[index] = float(np.median(valid))
+    return smoothed
+
+
+def trim_mask_to_centerline(
+    mask: np.ndarray,
+    half_height: int,
+    window: int,
+    min_component_area: int,
+    min_aspect: float,
+) -> np.ndarray:
+    trimmed = np.zeros(mask.shape, dtype=bool)
+
+    for ys, xs in connected_components(mask):
+        area = len(xs)
+        if area < min_component_area:
+            continue
+
+        x0 = int(xs.min())
+        x1 = int(xs.max()) + 1
+        y0 = int(ys.min())
+        y1 = int(ys.max()) + 1
+        aspect = (x1 - x0) / max(1, y1 - y0)
+
+        component = np.zeros(mask.shape, dtype=bool)
+        component[ys, xs] = True
+        if aspect < min_aspect:
+            trimmed |= component
+            continue
+
+        centers = np.full(x1 - x0, np.nan, dtype=float)
+        for offset, x in enumerate(range(x0, x1)):
+            col_ys = np.flatnonzero(component[:, x])
+            if len(col_ys):
+                centers[offset] = float(np.median(col_ys))
+        centers = smooth_nan_median(centers, window)
+
+        kept = np.zeros(mask.shape, dtype=bool)
+        for offset, x in enumerate(range(x0, x1)):
+            center = centers[offset]
+            if np.isnan(center):
+                continue
+            col_ys = np.flatnonzero(component[:, x])
+            if len(col_ys) == 0:
+                continue
+            col_ys = col_ys[np.abs(col_ys - center) <= half_height]
+            kept[col_ys, x] = True
+
+        for comp_ys, comp_xs in connected_components(kept):
+            if len(comp_xs) >= min_component_area:
+                trimmed[comp_ys, comp_xs] = True
+
+    return trimmed
+
+
+def refine_mask(
+    mask: np.ndarray,
+    close_kernel: int,
+    close_iterations: int,
+    fill_holes: bool,
+    fill_convex: bool = False,
+    fill_convex_max_ratio: float = 1.35,
+) -> np.ndarray:
+    """Bridge small gaps (binary closing), fill enclosed holes, optionally
+    replace each connected component with its convex hull.
+
+    Makes a fragmented mask coherent again, e.g. a red warning-triangle case
+    whose printed label / arrow / specular / recess regions were left as holes
+    or edge concavities by the text-prompt segmentation.
+
+    fill_convex solidifies each component to its convex hull, which cleans
+    boundary concavities (an unmasked printed-label notch at the case end) that
+    binary_fill_holes cannot reach. It is guarded by fill_convex_max_ratio:
+    the hull is only applied when hull_area <= ratio * component_area, so a
+    component that is far from convex (e.g. two touching cases forming a V) is
+    left untouched instead of having the wedge between them filled with
+    background.
+    """
+    out = mask
+    if close_kernel and close_kernel > 0 and close_iterations > 0:
+        # Pad so the closing's erosion step does not eat pixels off masks that
+        # reach the image border.
+        pad = close_kernel * close_iterations + 1
+        padded = np.pad(out, pad, mode="constant")
+        padded = ndimage.binary_closing(
+            padded,
+            structure=np.ones((close_kernel, close_kernel), dtype=bool),
+            iterations=close_iterations,
+        )
+        out = padded[pad:-pad, pad:-pad]
+    if fill_holes:
+        out = ndimage.binary_fill_holes(out)
+    if fill_convex:
+        filled = np.zeros(out.shape, dtype=np.uint8)
+        for ys, xs in connected_components(out):
+            if len(xs) < 50:
+                filled[ys, xs] = 1
+                continue
+            pts = np.stack([xs, ys], axis=1).astype(np.int32)
+            hull = cv2.convexHull(pts)
+            hull_area = cv2.contourArea(hull)
+            if hull_area <= fill_convex_max_ratio * len(xs):
+                cv2.fillConvexPoly(filled, hull, 1)
+            else:
+                filled[ys, xs] = 1
+        out = filled > 0
+    return out
+
+
+
 def bbox_fill_fraction(mask: np.ndarray, bbox: list[int] | None = None) -> float:
     if bbox is None:
         bbox = mask_bbox(mask)
@@ -188,6 +476,94 @@ def bbox_fill_fraction(mask: np.ndarray, bbox: list[int] | None = None) -> float
     x0, y0, x1, y1 = bbox
     bbox_area = max(1, (x1 - x0) * (y1 - y0))
     return float(mask.sum()) / float(bbox_area)
+
+
+def split_or_filter_components(
+    mask: np.ndarray,
+    min_component_area: int,
+    min_component_bbox_fill_frac: float | None,
+    split_components: bool,
+) -> list[np.ndarray]:
+    components: list[np.ndarray] = []
+    union = np.zeros(mask.shape, dtype=bool)
+
+    for ys, xs in connected_components(mask):
+        if len(xs) < min_component_area:
+            continue
+        component = np.zeros(mask.shape, dtype=bool)
+        component[ys, xs] = True
+        fill_frac = bbox_fill_fraction(component)
+        if (
+            min_component_bbox_fill_frac is not None
+            and fill_frac < min_component_bbox_fill_frac
+        ):
+            continue
+        if split_components:
+            components.append(component)
+        else:
+            union |= component
+
+    if split_components:
+        return components
+    if int(union.sum()) == 0:
+        return []
+    return [union]
+
+
+def split_mask_by_kmeans(
+    mask: np.ndarray,
+    instances: int,
+    y_weight: float,
+    gap_kernel: int,
+    min_component_area: int,
+) -> list[np.ndarray]:
+    ys, xs = np.nonzero(mask)
+    if instances < 2 or len(xs) < max(instances, min_component_area):
+        return [mask] if int(mask.sum()) else []
+
+    coords = np.stack([xs.astype(np.float32), ys.astype(np.float32) * y_weight], axis=1)
+    criteria = (
+        cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+        50,
+        0.2,
+    )
+    attempts = 8
+    flags = cv2.KMEANS_PP_CENTERS
+    compactness, labels, centers = cv2.kmeans(
+        coords, instances, None, criteria, attempts, flags
+    )
+    del compactness
+
+    labels = labels.reshape(-1)
+    order = np.argsort(centers[:, 0])
+    ordered_components: list[np.ndarray] = []
+    for label_id in order:
+        component = np.zeros(mask.shape, dtype=bool)
+        keep = labels == label_id
+        component[ys[keep], xs[keep]] = True
+        if int(component.sum()) >= min_component_area:
+            ordered_components.append(component)
+
+    if len(ordered_components) != instances:
+        return [mask] if int(mask.sum()) else []
+
+    if gap_kernel and gap_kernel > 0:
+        kernel = np.ones((gap_kernel, gap_kernel), dtype=np.uint8)
+        dilated = [
+            cv2.dilate(component.astype(np.uint8), kernel, iterations=1) > 0
+            for component in ordered_components
+        ]
+        boundary = np.zeros(mask.shape, dtype=bool)
+        for i, left in enumerate(dilated):
+            for right in dilated[i + 1 :]:
+                boundary |= left & right & mask
+        ordered_components = [
+            component & ~boundary for component in ordered_components
+        ]
+        if any(int(component.sum()) < min_component_area for component in ordered_components):
+            return [mask] if int(mask.sum()) else []
+
+    return ordered_components
 
 
 def run_text_prompt(
@@ -226,9 +602,30 @@ def collect_detections(
     min_area_frac: float,
     max_area_frac: float | None,
     max_bbox_fill_frac: float | None,
+    min_bbox_fill_frac: float | None,
     iou_dedup: float,
     max_instances: int | None = None,
     min_relative_score: float | None = None,
+    reject_border_touching: bool = False,
+    border_slack: int = 0,
+    max_aspect: float | None = None,
+    centerline_trim: bool = False,
+    centerline_half_height: int = 14,
+    centerline_window: int = 51,
+    centerline_min_component_area: int = 500,
+    centerline_min_aspect: float = 3.0,
+    mask_min_x: int | None = None,
+    mask_max_x: int | None = None,
+    min_component_bbox_fill_frac: float | None = None,
+    split_components: bool = False,
+    fill_holes: bool = False,
+    mask_close_kernel: int = 0,
+    mask_close_iterations: int = 1,
+    fill_convex: bool = False,
+    fill_convex_max_ratio: float = 1.35,
+    kmeans_split_instances: int | None = None,
+    kmeans_split_y_weight: float = 1.0,
+    kmeans_split_gap_kernel: int = 0,
 ) -> tuple[np.ndarray, list[dict]]:
     image = Image.open(image_path).convert("RGB")
     rgb = np.array(image)
@@ -251,6 +648,12 @@ def collect_detections(
                 for mask, prob in run_text_prompt(predictor, session_id, prompt):
                     if mask.shape != (height, width):
                         continue
+                    if mask_min_x is not None or mask_max_x is not None:
+                        mask = mask.copy()
+                        if mask_min_x is not None:
+                            mask[:, :mask_min_x] = False
+                        if mask_max_x is not None:
+                            mask[:, mask_max_x + 1 :] = False
                     area = int(mask.sum())
                     bbox = mask_bbox(mask)
                     fill_frac = bbox_fill_fraction(mask, bbox)
@@ -258,9 +661,28 @@ def collect_detections(
                         continue
                     if max_area is not None and area > max_area:
                         continue
+                    if max_aspect is not None and bbox is not None:
+                        bw = bbox[2] - bbox[0]
+                        bh = bbox[3] - bbox[1]
+                        if max(bw, bh) / max(1, min(bw, bh)) > max_aspect:
+                            continue
+                    if reject_border_touching and bbox is not None:
+                        x0, y0, x1, y1 = bbox
+                        if (
+                            x0 <= border_slack
+                            or y0 <= border_slack
+                            or x1 >= width - border_slack
+                            or y1 >= height - border_slack
+                        ):
+                            continue
                     if (
                         max_bbox_fill_frac is not None
                         and fill_frac > max_bbox_fill_frac
+                    ):
+                        continue
+                    if (
+                        min_bbox_fill_frac is not None
+                        and fill_frac < min_bbox_fill_frac
                     ):
                         continue
                     candidates.append((mask, prob, prompt))
@@ -286,8 +708,49 @@ def collect_detections(
         if max_instances is not None and len(kept) >= max_instances:
             break
 
+    processed: list[tuple[np.ndarray, float, str]] = []
+    for mask, prob, prompt in kept:
+        if centerline_trim:
+            mask = trim_mask_to_centerline(
+                mask=mask,
+                half_height=centerline_half_height,
+                window=centerline_window,
+                min_component_area=centerline_min_component_area,
+                min_aspect=centerline_min_aspect,
+            )
+        if fill_holes or mask_close_kernel or fill_convex:
+            mask = refine_mask(
+                mask,
+                close_kernel=mask_close_kernel,
+                close_iterations=mask_close_iterations,
+                fill_holes=fill_holes,
+                fill_convex=fill_convex,
+                fill_convex_max_ratio=fill_convex_max_ratio,
+            )
+        if kmeans_split_instances is not None:
+            masks = split_mask_by_kmeans(
+                mask,
+                instances=kmeans_split_instances,
+                y_weight=kmeans_split_y_weight,
+                gap_kernel=kmeans_split_gap_kernel,
+                min_component_area=min_area,
+            )
+        elif min_component_bbox_fill_frac is not None or split_components:
+            masks = split_or_filter_components(
+                mask,
+                min_component_area=min_area,
+                min_component_bbox_fill_frac=min_component_bbox_fill_frac,
+                split_components=split_components,
+            )
+        else:
+            masks = [mask] if int(mask.sum()) else []
+        for component_mask in masks:
+            if int(component_mask.sum()) == 0:
+                continue
+            processed.append((component_mask, prob, prompt))
+
     metadata = []
-    for index, (mask, prob, prompt) in enumerate(kept, start=1):
+    for index, (mask, prob, prompt) in enumerate(processed, start=1):
         bbox = mask_bbox(mask)
         area = int(mask.sum())
         metadata.append(
@@ -302,7 +765,7 @@ def collect_detections(
             }
         )
     union = np.zeros((height, width), dtype=bool)
-    for mask, _, _ in kept:
+    for mask, _, _ in processed:
         union |= mask
     return union, metadata
 
@@ -392,6 +855,8 @@ def build_predictor(args: argparse.Namespace):
 def resolve_images(args: argparse.Namespace) -> list[Path]:
     if args.image:
         images = [args.image]
+    elif args.image_stems:
+        images = [args.input_dir / f"{stem}.png" for stem in args.image_stems]
     elif args.image_list:
         image_lines = [
             line.strip()
@@ -458,9 +923,30 @@ def main() -> None:
             min_area_frac=args.min_area_frac,
             max_area_frac=args.max_area_frac,
             max_bbox_fill_frac=args.max_bbox_fill_frac,
+            min_bbox_fill_frac=args.min_bbox_fill_frac,
             iou_dedup=args.iou_dedup,
             max_instances=args.max_instances,
             min_relative_score=args.min_relative_score,
+            reject_border_touching=args.reject_border_touching,
+            border_slack=args.border_slack,
+            max_aspect=args.max_aspect,
+            centerline_trim=args.centerline_trim,
+            centerline_half_height=args.centerline_half_height,
+            centerline_window=args.centerline_window,
+            centerline_min_component_area=args.centerline_min_component_area,
+            centerline_min_aspect=args.centerline_min_aspect,
+            mask_min_x=args.mask_min_x,
+            mask_max_x=args.mask_max_x,
+            min_component_bbox_fill_frac=args.min_component_bbox_fill_frac,
+            split_components=args.split_components,
+            fill_holes=args.fill_holes,
+            mask_close_kernel=args.mask_close_kernel,
+            mask_close_iterations=args.mask_close_iterations,
+            fill_convex=args.fill_convex,
+            fill_convex_max_ratio=args.fill_convex_max_ratio,
+            kmeans_split_instances=args.kmeans_split_instances,
+            kmeans_split_y_weight=args.kmeans_split_y_weight,
+            kmeans_split_gap_kernel=args.kmeans_split_gap_kernel,
         )
         save_outputs(
             image_path=image_path,
