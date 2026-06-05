@@ -1,0 +1,19 @@
+{
+  "name": "table_view",
+  "sequence_prefixes": [
+    "20260521_114255",
+    "20260521_115110",
+    "20260522_141124",
+    "20260522_141627",
+    "20260522_142152",
+    "20260522_143514"
+  ],
+  "prompts": [
+    "small black plastic trim cover cap",
+    "small black plastic screw cover cap",
+    "black automotive screw cover plate",
+    "black plastic screw hole cover panel",
+    "small black car interior cover plate"
+  ],
+  "scene": "single_object"
+}

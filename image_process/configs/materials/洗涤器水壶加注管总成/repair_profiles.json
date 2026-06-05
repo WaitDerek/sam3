@@ -1,0 +1,65 @@
+{
+  "name": "repair_profiles",
+  "scene": "repair_bundle",
+  "profiles": [
+    {
+      "name": "bin_view_repair",
+      "scene": "container",
+      "threshold_overrides": {
+        "min_score": 0.4,
+        "min_area_frac": 0.0003,
+        "max_area_frac": 0.05,
+        "max_bbox_fill_frac": 0.75,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.1,
+        "new_det_thresh": 0.15,
+        "max_instances": 3,
+        "min_relative_score": 0.55
+      },
+      "prompts": [
+        "white plastic washer fluid filler neck with blue cap",
+        "white S-shaped plastic tube with two blue joints",
+        "white plastic pipe with blue elbow connectors lying in box"
+      ],
+      "stems": [
+        "20260527_140319__000107",
+        "20260527_140319__000108",
+        "20260527_140319__000226",
+        "20260527_140319__000228",
+        "20260527_140319__000229"
+      ]
+    },
+    {
+      "name": "table_view_repair",
+      "scene": "single_object",
+      "threshold_overrides": {
+        "min_score": 0.35,
+        "min_area_frac": 0.0003,
+        "max_area_frac": 0.05,
+        "max_bbox_fill_frac": 0.9,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.1,
+        "new_det_thresh": 0.15,
+        "max_instances": 2,
+        "min_relative_score": 0.4
+      },
+      "prompts": [
+        "white plastic washer fluid filler neck with blue cap",
+        "white plastic filler tube with blue cap",
+        "blue funnel on white plastic washer filler tube",
+        "white plastic automotive filler tube"
+      ],
+      "stems": [
+        "20260520_163500__000000",
+        "20260520_163500__000001",
+        "20260520_163635__000000",
+        "20260520_163635__000001",
+        "20260520_163642__000000",
+        "20260520_163642__000001",
+        "20260520_163508__000000",
+        "20260520_163508__000001",
+        "20260520_163712__000000"
+      ]
+    }
+  ]
+}

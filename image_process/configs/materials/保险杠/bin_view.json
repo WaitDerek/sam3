@@ -1,0 +1,29 @@
+{
+  "name": "bin_view",
+  "scene": "container",
+  "sequence_prefixes": [
+    "20260522_132752",
+    "20260522_133438",
+    "20260522_135211",
+    "20260522_135819",
+    "20260527_112032",
+    "20260527_112618"
+  ],
+  "threshold_overrides": {
+    "min_score": 0.2,
+    "min_area_frac": 0.0002,
+    "max_area_frac": 0.05,
+    "max_bbox_fill_frac": 0.97,
+    "iou_dedup": 0.3,
+    "score_threshold_detection": 0.05,
+    "new_det_thresh": 0.1,
+    "max_instances": 6,
+    "min_relative_score": 0.3
+  },
+  "prompts": [
+    "small black plastic bumper bracket in grid crate",
+    "black plastic bumper mounting bracket in storage tray",
+    "small black plastic car bracket with holes in crate",
+    "black plastic bracket"
+  ]
+}

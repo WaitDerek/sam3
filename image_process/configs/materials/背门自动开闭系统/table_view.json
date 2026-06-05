@@ -1,0 +1,29 @@
+{
+  "name": "table_view",
+  "scene": "single_object",
+  "sequence_prefixes": [
+    "20260521_140702",
+    "20260521_141129",
+    "20260521_142146",
+    "20260527_133430",
+    "20260527_134120",
+    "20260527_134359"
+  ],
+  "threshold_overrides": {
+    "min_score": 0.2,
+    "min_area_frac": 0.0002,
+    "max_area_frac": 0.05,
+    "max_bbox_fill_frac": 0.97,
+    "iou_dedup": 0.3,
+    "score_threshold_detection": 0.05,
+    "new_det_thresh": 0.1,
+    "max_instances": 4,
+    "min_relative_score": 0.3
+  },
+  "prompts": [
+    "black rectangular automotive control module with mounting tabs",
+    "black power tailgate control module",
+    "small black rectangular car module with label",
+    "black ECU module with white label"
+  ]
+}

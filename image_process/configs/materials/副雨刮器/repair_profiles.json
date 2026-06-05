@@ -1,0 +1,354 @@
+{
+  "name": "repair_profiles",
+  "scene": "repair_bundle",
+  "profiles": [
+    {
+      "name": "table_view_manual_pair_repair",
+      "threshold_overrides": {
+        "min_score": 0.02,
+        "min_area_frac": 0.0003,
+        "max_area_frac": 0.06,
+        "max_bbox_fill_frac": 0.65,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.0,
+        "new_det_thresh": 0.01,
+        "max_instances": 2
+      },
+      "prompts": [
+        "long black horizontal windshield wiper blade at the back of the green table",
+        "rear horizontal black windshield wiper blade only",
+        "black straight wiper blade with rectangular center connector on table",
+        "black rubber blade lying horizontally near the wall",
+        "two black windshield wiper blades on green table",
+        "single black windshield wiper blade on green table only"
+      ],
+      "scene": "single_object",
+      "stems": [
+        "20260521_151819__000148"
+      ]
+    },
+    {
+      "name": "bin_view_153324_pre_contact",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 2
+      },
+      "sequence_prefixes": [
+        "20260521_153324"
+      ],
+      "max_stem": "20260521_153324__000224",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "two separate black curved windshield wiper blades only, not gray crate dividers",
+        "separate passenger windshield wiper blades not plastic storage rack",
+        "two long black rubber wiper blades, exclude crate bars and teeth",
+        "black windshield wiper blade inside gray plastic crate"
+      ],
+      "scene": "contact"
+    },
+    {
+      "name": "bin_view_153324_contact_from_000225",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "max_area_frac": 0.025,
+        "max_bbox_fill_frac": 0.35,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 2
+      },
+      "sequence_prefixes": [
+        "20260521_153324"
+      ],
+      "min_stem": "20260521_153324__000225",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "single black windshield wiper blade only",
+        "thin black rubber windshield wiper blade only",
+        "black wiper blade not gray crate rack"
+      ],
+      "scene": "contact"
+    },
+    {
+      "name": "bin_view_153324_horizontal_overlap_000321",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "max_area_frac": 0.025,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 2
+      },
+      "sequence_prefixes": [
+        "20260521_153324"
+      ],
+      "min_stem": "20260521_153324__000321",
+      "max_stem": "20260521_153324__000321",
+      "prompts": [
+        "black horizontal curved windshield wiper blade only",
+        "black curved wiper blade with central hinge only",
+        "single black curved rubber wiper blade on crate floor",
+        "black arched windshield wiper rubber strip only"
+      ],
+      "scene": "contact"
+    },
+    {
+      "name": "bin_view_153324_late_single_empty_repair",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "max_area_frac": 0.025,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 1
+      },
+      "prompts": [
+        "black horizontal curved windshield wiper blade only",
+        "black curved wiper blade with central hinge only",
+        "single black curved rubber wiper blade on crate floor",
+        "black arched windshield wiper rubber strip only"
+      ],
+      "scene": "container",
+      "stems": [
+        "20260521_153324__000581",
+        "20260521_153324__000582",
+        "20260521_153324__000587",
+        "20260521_153324__000588",
+        "20260521_153324__000589",
+        "20260521_153324__000592",
+        "20260521_153324__000593",
+        "20260521_153324__000594"
+      ]
+    },
+    {
+      "name": "bin_view_153324_late_bin_two_wipers_000513_000530",
+      "threshold_overrides": {
+        "min_score": 0.02,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.035,
+        "max_bbox_fill_frac": 0.5,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 2,
+        "min_relative_score": 0.45
+      },
+      "sequence_prefixes": [
+        "20260521_153324"
+      ],
+      "min_stem": "20260521_153324__000513",
+      "max_stem": "20260521_153324__000530",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "single windshield wiper blade only",
+        "light gray or black windshield wiper blade only",
+        "long narrow automotive wiper blade with rubber strip only",
+        "vertical windshield wiper blade inside crate only",
+        "black horizontal curved windshield wiper blade only",
+        "black arched windshield wiper rubber strip only",
+        "curved windshield wiper blade with center connector only, not crate rack teeth"
+      ],
+      "scene": "container"
+    },
+    {
+      "name": "bin_view_153324_late_bin_single_wiper_from_000532",
+      "threshold_overrides": {
+        "min_score": 0.02,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.035,
+        "max_bbox_fill_frac": 0.5,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 1,
+        "min_relative_score": 0.45
+      },
+      "sequence_prefixes": [
+        "20260521_153324"
+      ],
+      "min_stem": "20260521_153324__000532",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "single windshield wiper blade only",
+        "light gray or black windshield wiper blade only",
+        "long narrow automotive wiper blade with rubber strip only",
+        "vertical windshield wiper blade inside crate only",
+        "black horizontal curved windshield wiper blade only",
+        "black arched windshield wiper rubber strip only",
+        "curved windshield wiper blade with center connector only, not crate rack teeth"
+      ],
+      "scene": "container"
+    },
+    {
+      "name": "bin_view_154208_pre_000081",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 2
+      },
+      "sequence_prefixes": [
+        "20260521_154208"
+      ],
+      "max_stem": "20260521_154208__000080",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "two separate black curved windshield wiper blades only, not gray crate dividers",
+        "separate passenger windshield wiper blades not plastic storage rack",
+        "two long black rubber wiper blades, exclude crate bars and teeth",
+        "black windshield wiper blade inside gray plastic crate"
+      ],
+      "scene": "container"
+    },
+    {
+      "name": "bin_view_154208_clean_000081_000152",
+      "threshold_overrides": {
+        "min_score": 0.02,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 2,
+        "min_relative_score": 0.45
+      },
+      "sequence_prefixes": [
+        "20260521_154208"
+      ],
+      "min_stem": "20260521_154208__000081",
+      "max_stem": "20260521_154208__000152",
+      "prompts": [
+        "single windshield wiper blade only",
+        "black curved rubber wiper blade only",
+        "black arched windshield wiper rubber strip only",
+        "curved windshield wiper blade with center connector only, not crate rack teeth",
+        "long narrow automotive wiper blade with rubber strip only"
+      ],
+      "scene": "container"
+    },
+    {
+      "name": "bin_view_154208_post_000152",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "iou_dedup": 0.25,
+        "score_threshold_detection": 0.03,
+        "new_det_thresh": 0.08,
+        "max_instances": 2
+      },
+      "sequence_prefixes": [
+        "20260521_154208"
+      ],
+      "min_stem": "20260521_154208__000153",
+      "prompts": [
+        "black curved rubber wiper blade only",
+        "two separate black curved windshield wiper blades only, not gray crate dividers",
+        "separate passenger windshield wiper blades not plastic storage rack",
+        "two long black rubber wiper blades, exclude crate bars and teeth",
+        "black windshield wiper blade inside gray plastic crate"
+      ],
+      "scene": "container"
+    },
+    {
+      "name": "bin_view_154208_issue_repair",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 2,
+        "min_relative_score": 0.45
+      },
+      "prompts": [
+        "single windshield wiper blade only",
+        "black curved rubber wiper blade only, not black foam holder blocks",
+        "long narrow automotive wiper blade with rubber strip only, exclude black crate teeth",
+        "curved windshield wiper blade with center connector only, not crate rack teeth"
+      ],
+      "scene": "container_repair",
+      "stems": [
+        "20260521_154208__000299",
+        "20260521_154208__000320"
+      ]
+    },
+    {
+      "name": "bin_view_154208_204_206_centerline_repair",
+      "threshold_overrides": {
+        "min_score": 0.05,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 2,
+        "min_relative_score": 0.45,
+        "centerline_trim": true,
+        "centerline_half_height": 14,
+        "centerline_window": 51,
+        "centerline_min_component_area": 500,
+        "centerline_min_aspect": 3.0,
+        "mask_min_x": 500,
+        "mask_max_x": 872
+      },
+      "prompts": [
+        "single windshield wiper blade only",
+        "black curved rubber wiper blade only, not black foam holder blocks",
+        "long narrow automotive wiper blade with rubber strip only, exclude black crate teeth",
+        "curved windshield wiper blade with center connector only, not crate rack teeth"
+      ],
+      "scene": "container_repair",
+      "stems": [
+        "20260521_154208__000204",
+        "20260521_154208__000205",
+        "20260521_154208__000206"
+      ]
+    },
+    {
+      "name": "manual_issue_repair",
+      "threshold_overrides": {
+        "min_score": 0.02,
+        "min_area_frac": 0.0002,
+        "max_area_frac": 0.03,
+        "max_bbox_fill_frac": 0.45,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.02,
+        "new_det_thresh": 0.06,
+        "max_instances": 2,
+        "min_relative_score": 0.45
+      },
+      "prompts": [
+        "single windshield wiper blade only",
+        "black curved rubber wiper blade only",
+        "light gray or black windshield wiper blade only",
+        "black arched windshield wiper rubber strip only",
+        "curved windshield wiper blade with center connector only, not crate rack teeth",
+        "long narrow automotive wiper blade with rubber strip only",
+        "vertical windshield wiper blade inside crate only"
+      ],
+      "scene": "manual_repair",
+      "stems": [
+        "20260521_154208__000197",
+        "20260521_154208__000027",
+        "20260521_153324__000341",
+        "20260521_153324__000342",
+        "20260521_153324__000343",
+        "20260521_153324__000344",
+        "20260521_153324__000345",
+        "20260521_153324__000231",
+        "20260521_153324__000232",
+        "20260521_153324__000350",
+        "20260521_153324__000351"
+      ]
+    }
+  ]
+}
