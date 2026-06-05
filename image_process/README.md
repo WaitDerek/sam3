@@ -1,412 +1,148 @@
-# RealSense 数据处理脚本说明
+# image_process 标准运行框架
 
-这个目录用于处理 RealSense 采集数据，主要流程包括：
-
-1. 从 `.bag` 文件抽帧，生成 `bgr/` 和 `depth/`
-2. 合并多个抽帧后的数据集
-3. 以 `bgr/` 为准对齐 `depth/`
-4. 用 `bgr + depth` 生成彩色点云 PCD
-5. 用 SAM2/SAM3 风格流程生成目标 mask，并把 mask 映射到三维点云中高亮显示
-6. 用 Open3D 可视化生成的 PCD（交互窗口或离屏出图）
-
-下文命令默认在本目录下运行（即与脚本同级），数据集路径使用相对路径，可按需替换为自己的绝对路径。
-
-常见目录结构：
+`image_process` 是本仓库中物料检测、深度图整理、点云生成和结果查看的工作区。后续本地运行只使用下面的目录布局：
 
 ```text
-dataset_name/
-  bgr/
-    000000.png
-  depth/
-    000000.png
-  mask/
-    000000.png
-  pcd/
-    000000.pcd
-    000000_filter.pcd
+image_process/
+  dataset/        # 输入和中间数据，不提交 Git
+    raw/          # 可选：RealSense .bag 或原始采集数据
+    extracted/    # 可选：extract.py 抽帧结果
+    merged/       # 可选：extract.py 合并结果
+    test/         # 本地示例数据
+    <物料目录>/
+      bgr/
+      depth/
+  out/            # 检测、临时点云、试验结果，不提交 Git
+  configs/        # 可提交的稳定检测参数
+  changan/        # 已验收交付产物，不提交 Git
 ```
 
-路径写法说明：
+`changan` 是交付归档位置，只有确认完整的数据才放入这里。日常检测和调参输出先写入 `out`，不要直接覆盖 `changan`。
 
-- Linux / WSL 使用 POSIX 路径，例如 `./dataset` 或 `/data/dataset`
-- Windows 原生 Python 使用 Windows 路径，例如 `.\dataset` 或 `D:\dataset`
+## 数据准备脚本
 
----
+### `extract.py`
 
-## `extract.py`
-
-功能：
-
-- 从 RealSense `.bag` 文件中抽帧
-- 只生成 `bgr/` 和 `depth/`
-- 不再直接生成 `pcd/`
-- 支持把多个已抽帧数据集合并成一个 `merged_xxx` 数据集
-- 支持抽帧后立即合并
-- 支持对已有数据集重新编号
-
-### 抽帧
+从 RealSense `.bag` 抽取 `bgr/depth`，也可合并和重编号已抽帧数据。默认路径已经收敛到 `image_process/dataset`：
 
 ```bash
-python extract.py \
-  --bag-dir ./data/mydataset \
-  --output-root ./dataset/mydataset \
+python image_process/extract.py \
+  --bag-dir image_process/dataset/raw \
+  --output-root image_process/dataset/extracted \
   --save-interval 10
 ```
 
-参数说明：
-
-- `--bag-dir`：输入 `.bag` 文件所在目录
-- `--output-root`：抽帧输出目录
-- `--save-interval`：保存间隔，例如 `10` 表示每 10 帧保存一次
-- `--overwrite`：允许覆盖已有输出目录
-
-输出示例：
-
-```text
-./dataset/mydataset/
-  bag_name/
-    bgr/
-    depth/
-    meta/
-```
-
-### 合并数据集
+合并抽帧结果：
 
 ```bash
-python extract.py \
+python image_process/extract.py \
   --merge \
-  --source-root ./dataset \
-  --merge-output ./dataset \
-  --merge-name merged_demo \
+  --source-root image_process/dataset/extracted \
+  --merge-output image_process/dataset \
+  --merge-name merged \
   --apply
 ```
 
-参数说明：
-
-- `--merge`：进入合并模式
-- `--source-root`：源数据集根目录
-- `--merge-output`：合并结果输出位置
-- `--merge-name`：合并后的文件夹名称
-- `--apply`：真正执行复制；不加时只预览
-- `--overwrite`：允许覆盖重名文件
-- `--sources`：只合并指定的源文件夹名
-- `--source-path`：指定任意源目录，可重复使用
-- `--separator`：合并后文件名前缀与原文件名之间的分隔符，默认 `__`
-
-合并规则：
-
-- 默认合并 `bgr/` 和 `depth/`
-- 已经存在的目标文件不会重复复制
-- 不会因为源文件夹名已经出现过就跳过整个包，只要目标文件名不存在就会加入
-
-### 抽帧后直接合并
+重编号：
 
 ```bash
-python extract.py \
-  --bag-dir ./data/mydataset \
-  --output-root ./dataset/mydataset \
-  --save-interval 10 \
-  --merge-after-extract \
-  --merge-output ./dataset \
-  --merge-name merged_demo \
-  --apply
-```
-
-### 重新编号
-
-```bash
-python extract.py \
+python image_process/extract.py \
   --renumber \
-  --dataset-dir ./dataset/merged_demo \
+  --dataset-dir image_process/dataset/merged \
   --start-index 0 \
   --digits 6
 ```
 
----
+### `align_dataset.py`
 
-## `align_dataset.py`
-
-功能：
-
-- 递归检查数据集中的 `bgr/` 和 `depth/`
-- 以 `bgr/` 为基准
-- 删除 `depth/` 中多出来的文件
-- 如果 `bgr/` 有但 `depth/` 没有，只报告，不删除 `bgr`
-
-默认只对齐 `depth`。
-
-### 删除 `depth` 多余文件
+按 `bgr` 对齐 `depth`、`pcd` 等目录，删除目标目录里没有对应 RGB 的多余文件。默认是 dry-run，真正删除必须加 `--apply`。
 
 ```bash
-python align_dataset.py ./dataset --apply
+python image_process/align_dataset.py image_process/dataset/<物料目录> --apply
 ```
 
-常用参数：
+## 检测脚本
 
-- `root`：数据集根目录
-- `--base`：基准文件夹，默认 `bgr`
-- `--targets`：要对齐的目标文件夹，默认 `depth`
-- `--patterns`：参与对齐的文件类型，默认 `*.png *.pcd`
-- `--apply`：真正删除；不加时只预览
+### `run_material_segmentation.py`
 
-如果临时也要对齐 `pcd`：
+配置驱动的推荐入口，读取 `image_process/configs/object_segmentation_params.json`，再调用 `detect_material_bgr.py`。
 
 ```bash
-python align_dataset.py ./dataset --targets depth pcd --apply
+python image_process/run_material_segmentation.py --label 洗涤器水壶加注管总成
+python image_process/run_material_segmentation.py
 ```
 
----
+### `detect_material_bgr.py`
 
-## `process_image.py`
-
-功能：
-
-- 输入 `bgr/` 和 `depth/`
-- 用 SAM2 自动或手动提示分割图中明显目标
-- 输出彩色 mask 图
-- 把 mask 映射到三维点云中
-- 输出 CloudCompare 可打开的彩色 PCD
-- mask 对应区域在 PCD 中会被标红
-
-依赖说明：需要可导入的 SAM2 包。如果 SAM2 不在 `PYTHONPATH` 中，可在命令前临时指定，
-例如 `PYTHONPATH=/path/to/sam2`。离线加载权重可设置 `HF_HUB_OFFLINE=1`。
-
-当前输出：
-
-```text
-mask/<frame>.png
-pcd/<frame>.pcd
-```
-
-如果开启深度滤波，PCD 输出为：
-
-```text
-pcd/<frame>_filter.pcd
-```
-
-### 自动分割并生成高亮点云
+底层单物料检测入口。适合临时检测单张或少量图片，输出 `masks/metadata/overlays` 到 `image_process/out/<结果目录>`。
 
 ```bash
-PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
-python process_image.py \
-  --dataset-dir ./sam3demo \
+python image_process/detect_material_bgr.py \
+  --input-dir image_process/dataset/<物料目录>/bgr \
+  --output-dir image_process/out/<结果目录> \
+  --label <物料名> \
+  --image-stem <图片stem> \
+  --text-prompt "<prompt>"
+```
+
+### `detect_materials.py`
+
+早期固定入口，仅保留兼容用途。新检测优先使用 `run_material_segmentation.py` 或 `detect_material_bgr.py`。
+
+## 修复和清理脚本
+
+### `repair_material_segmentation.py`
+
+历史补检批处理脚本，内置若干物料的修复范围和阈值。它会调用 SAM3，需要可用 CUDA。
+
+### `clean_container_fps.py`
+
+按 metadata 规则清理料箱边沿、容器等误检，并重建对应 mask/overlay。
+
+```bash
+python image_process/clean_container_fps.py --material washer_filler_769 --dry-run
+python image_process/clean_container_fps.py --material washer_filler_769
+```
+
+## 点云脚本
+
+### `mask_depth_to_pcd.py`
+
+推荐的目标点云生成脚本。它使用 `bgr + depth + masks`，只导出目标物点云。
+
+```bash
+python image_process/mask_depth_to_pcd.py \
+  --dataset-dir image_process/changan/洗涤器水壶加注管总成_1198 \
   --overwrite
 ```
 
-默认目录结构：
+### `bgr_depth_to_pcd.py`
 
-```text
-sam3demo/
-  bgr/
-  depth/
-  mask/
-  pcd/
-```
-
-### 指定某一帧
+全场景点云生成脚本，不使用 mask，适合检查 RGB-D 对齐和原始深度质量。
 
 ```bash
-PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
-python process_image.py \
-  --dataset-dir ./sam3demo \
-  --frame 20260521_112611__000000 \
+python image_process/bgr_depth_to_pcd.py \
+  --dataset-dir image_process/dataset/test \
   --overwrite
 ```
 
-### 手动指定 box 或 point
+### `visualize_pcd.py`
+
+用 Open3D 查看或截图 PCD。
 
 ```bash
-PYTHONPATH=/path/to/sam2 HF_HUB_OFFLINE=1 \
-python process_image.py \
-  --dataset-dir ./sam3demo \
-  --box 760,350,990,510 \
-  --point 875,425 \
-  --overwrite
+python image_process/visualize_pcd.py \
+  image_process/changan/洗涤器水壶加注管总成_1198/pcd/20260520_153258__000000.pcd
 ```
 
-参数说明：
+## 内参
 
-- `--box x1,y1,x2,y2`：手动指定目标框
-- `--point x,y`：手动指定正样本点，可重复
-- `--negative-point x,y`：手动指定负样本点，可重复
-- 不加 `--box/--point` 时，脚本会自动检测明显前景物体，再交给 SAM2 分割
+点云脚本按顺序读取：
 
-### 深度滤波
+1. 命令行 `--intrinsics-json`
+2. `<dataset>/meta/intrinsic.json`
+3. `<dataset>/intrinsic.json`
+4. `image_process/intrinsic.json`
+5. 脚本内置默认值
 
-默认不滤波：
-
-```bash
---depth-filter none
-```
-
-中值滤波：
-
-```bash
---depth-filter median --median-ksize 5
-```
-
-双边滤波：
-
-```bash
---depth-filter bilateral \
---bilateral-d 7 \
---bilateral-sigma-color 35 \
---bilateral-sigma-space 35
-```
-
-开启滤波后，输出文件名会带 `_filter`：
-
-```text
-pcd/<frame>_filter.pcd
-```
-
-其他常用参数：
-
-- `--intrinsics-json`：指定相机内参文件
-- `--depth-scale`：深度单位比例，默认 `1000.0`
-- `--min-depth`：最小保留深度，单位米
-- `--max-depth`：最大保留深度，单位米
-- `--camera-frame`：保持相机坐标系 `x-right/y-down/z-forward`
-- `--overwrite`：覆盖已有输出
-
----
-
-## `bgr_depth_to_pcd.py`
-
-功能：
-
-- 不经过 SAM2
-- 不生成 mask
-- 直接把对齐的 `bgr/` 和 `depth/` 转成彩色点云 PCD
-- 适合查看完整 RGB-D 场景点云
-
-### 处理整个数据集
-
-```bash
-python bgr_depth_to_pcd.py \
-  --dataset-dir ./sam3demo \
-  --overwrite
-```
-
-输出：
-
-```text
-pcd/<frame>.pcd
-```
-
-### 只处理一帧
-
-```bash
-python bgr_depth_to_pcd.py \
-  --dataset-dir ./sam3demo \
-  --frame 20260521_112611__000000 \
-  --overwrite
-```
-
-常用参数：
-
-- `--dataset-dir`：包含 `bgr/` 和 `depth/` 的数据集目录
-- `--bgr-dir`：单独指定 bgr 目录
-- `--depth-dir`：单独指定 depth 目录
-- `--output-dir`：指定 PCD 输出目录
-- `--frame`：只处理指定帧；不加则处理全部同名帧
-- `--intrinsics-json`：指定相机内参文件
-- `--depth-scale`：深度单位比例，默认 `1000.0`
-- `--min-depth`：最小保留深度，单位米
-- `--max-depth`：最大保留深度，单位米
-- `--camera-frame`：保持相机坐标系
-- `--overwrite`：覆盖已有输出
-
----
-
-## `visualize_pcd.py`
-
-功能：
-
-- 用 Open3D 打开彩色 PCD 点云
-- 支持交互窗口（可旋转、缩放、平移）
-- 支持离屏渲染出图，适合服务器无显示器或批量截图
-- 可对点云做体素下采样，缓解点数过多时的卡顿
-
-依赖：`open3d`。
-
-### 交互查看
-
-```bash
-python visualize_pcd.py ./sam3demo/pcd/20260521_112611__000000.pcd
-```
-
-### 离屏出图
-
-```bash
-python visualize_pcd.py ./sam3demo/pcd/20260521_112611__000000.pcd \
-  --screenshot ./render.png \
-  --no-window
-```
-
-常用参数：
-
-- `pcd`：要查看的 `.pcd` 文件路径
-- `--screenshot`：保存 PNG 渲染图的路径
-- `--no-window`：纯离屏渲染，需配合 `--screenshot`，无显示器时使用
-- `--point-size`：渲染点大小，默认 `1.5`
-- `--voxel-size`：体素下采样尺寸，单位米，`0` 表示不下采样
-- `--background`：背景色，`black` 或 `white`，默认 `black`
-
----
-
-## `intrinsic.json`
-
-功能：
-
-- 保存相机内参
-- `process_image.py` 和 `bgr_depth_to_pcd.py` 会优先读取数据集里的内参
-- 如果没有找到，会使用脚本目录下的 `intrinsic.json`
-- 如果仍没有找到，会使用脚本内置默认内参
-
-典型字段：
-
-```json
-{
-  "width": 1280,
-  "height": 720,
-  "fx": 662.636,
-  "fy": 662.636,
-  "cx": 635.522,
-  "cy": 348.738
-}
-```
-
----
-
-## Windows / WSL 运行提示
-
-Windows 原生 Python 使用 Windows 路径格式：
-
-```powershell
-python extract.py --bag-dir .\data --output-root .\dataset --save-interval 10
-```
-
-通过 WSL 运行时，路径使用 POSIX 格式（Windows 盘符映射为 `/mnt/<盘符>/...`）：
-
-```bash
-python align_dataset.py ./dataset --apply
-```
-
-PowerShell 多行命令使用反引号：
-
-```powershell
-python extract.py `
-  --bag-dir .\data `
-  --output-root .\dataset `
-  --save-interval 10
-```
-
-Linux/WSL 多行命令使用反斜杠：
-
-```bash
-python extract.py \
-  --bag-dir ./data \
-  --output-root ./dataset \
-  --save-interval 10
-```
+如果使用新的相机或原始分辨率数据，优先把对应内参放在数据集目录下，或显式传入 `--intrinsics-json`。

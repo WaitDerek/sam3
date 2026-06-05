@@ -8,9 +8,10 @@ import cv2
 import numpy as np
 
 
-DEFAULT_BAG_DIR = Path("data")
-DEFAULT_OUTPUT_ROOT = Path("dataset")
-DEFAULT_MERGE_OUTPUT_DIR = Path("dataset_merged")
+TOOL_DIR = Path(__file__).resolve().parent
+DEFAULT_BAG_DIR = TOOL_DIR / "dataset" / "raw"
+DEFAULT_OUTPUT_ROOT = TOOL_DIR / "dataset" / "extracted"
+DEFAULT_MERGE_OUTPUT_DIR = TOOL_DIR / "dataset" / "merged"
 DEFAULT_MERGE_DIRS = [
     "bgr",
     "depth",
@@ -99,8 +100,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Merge mode: optional name for the merged dataset folder. "
-            "Example: --merge-output ./out --merge-name merged_demo creates "
-            "./out/merged_demo."
+            "Example: --merge-output image_process/dataset --merge-name "
+            "merged_demo creates image_process/dataset/merged_demo."
         ),
     )
     parser.add_argument(

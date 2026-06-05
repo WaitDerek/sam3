@@ -169,6 +169,3 @@ Thumbs.db
 /.agents
 /.claude
 /.codex
-
-#else
-/image_process/process_image.py

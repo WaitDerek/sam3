@@ -75,7 +75,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Align dataset folders by deleting files in depth that do not exist in bgr."
     )
-    parser.add_argument("root", type=Path, help="Dataset root, for example ./dataset")
+    parser.add_argument("root", type=Path, help="Dataset root, for example image_process/dataset")
     parser.add_argument("--base", default="bgr", help="Reference folder name. Default: bgr")
     parser.add_argument(
         "--targets",

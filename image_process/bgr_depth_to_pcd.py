@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 
-DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "sam3demo"
+DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "dataset" / "test"
 DEFAULT_INTRINSICS = {
     "width": 1280,
     "height": 720,
