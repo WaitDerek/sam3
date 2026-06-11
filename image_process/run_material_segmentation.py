@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -25,7 +24,7 @@ LOG_DIR = OUT_DIR / "_logs"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run image_process/detect_material_bgr.py for every object in the config."
+        description="Run detect_material_bgr.py for every object in the config."
     )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument(
@@ -35,14 +34,27 @@ def parse_args() -> argparse.Namespace:
         help="Only run this label. Repeat for multiple labels.",
     )
     parser.add_argument(
-        "--clean",
+        "--profile",
+        action="append",
+        dest="profiles",
+        help=(
+            "Only run profiles with this name (e.g. box1_multi_whole_crate). "
+            "Repeat for multiple profiles. Lets you re-run just the profile you "
+            "changed instead of every profile in the box."
+        ),
+    )
+    parser.add_argument(
+        "--skip-existing",
         action="store_true",
-        help="Remove configured output directories before running.",
+        help=(
+            "Skip frames whose output already exists. Use to resume an "
+            "interrupted run; omit to overwrite (e.g. after a parameter change)."
+        ),
     )
     parser.add_argument(
         "--write-params-only",
         action="store_true",
-        help="Only write image_process/out/<label>.json parameter snapshots.",
+        help="Only write out/<label>.json parameter snapshots.",
     )
     return parser.parse_args()
 
@@ -92,7 +104,9 @@ def object_matches(obj: dict, requested: set[str]) -> bool:
     return bool(requested & {name for name in names if name})
 
 
-def build_command(obj: dict, profile: dict | None = None) -> list[str]:
+def build_command(
+    obj: dict, profile: dict | None = None, skip_existing: bool = False
+) -> list[str]:
     thresholds = merge_thresholds(obj, profile)
     prompts = profile.get("prompts") if profile else obj.get("prompts", [])
     if not prompts:
@@ -195,6 +209,23 @@ def build_command(obj: dict, profile: dict | None = None) -> list[str]:
         cmd.extend(
             ["--fill-convex-max-ratio", str(thresholds["fill_convex_max_ratio"])]
         )
+    if thresholds.get("front_priority"):
+        cmd.append("--front-priority")
+    if thresholds.get("front_priority_convex"):
+        cmd.append("--front-priority-convex")
+    if thresholds.get("front_priority_convex_max_ratio") is not None:
+        cmd.extend(
+            [
+                "--front-priority-convex-max-ratio",
+                str(thresholds["front_priority_convex_max_ratio"]),
+            ]
+        )
+    if thresholds.get("save_instance_masks"):
+        cmd.append("--save-instance-masks")
+    if thresholds.get("instance_boundary_gap") is not None:
+        cmd.extend(["--instance-boundary-gap", str(thresholds["instance_boundary_gap"])])
+    if skip_existing:
+        cmd.append("--skip-existing")
 
     if profile:
         if profile.get("pattern"):
@@ -203,6 +234,8 @@ def build_command(obj: dict, profile: dict | None = None) -> list[str]:
             cmd.extend(["--image-list", str(resolve_config_path(profile["image_list"]))])
         for stem in profile.get("stems", []):
             cmd.extend(["--image-stem", stem])
+        for stem in profile.get("exclude_stems", []):
+            cmd.extend(["--exclude-stem", stem])
         for prefix in profile.get("sequence_prefixes", []):
             cmd.extend(["--include-prefix", prefix])
         if profile.get("min_stem"):
@@ -238,20 +271,31 @@ def write_parameter_snapshots(config: dict, objects: list[dict]) -> None:
         )
 
 
-def clean_outputs(objects: list[dict]) -> None:
-    for obj in objects:
-        output_dir = resolve_repo_path(obj["output_dir"])
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+def select_profiles(obj: dict, requested: set[str]) -> list[dict | None]:
+    profiles = load_parameter_files(obj) or [None]
+    if not requested:
+        return profiles
+    selected = [p for p in profiles if p and p.get("name") in requested]
+    return selected
 
 
-def run_objects(objects: list[dict]) -> None:
+def run_objects(
+    objects: list[dict],
+    requested_profiles: set[str] | None = None,
+    skip_existing: bool = False,
+) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    total = sum(max(1, len(load_parameter_files(obj))) for obj in objects)
+    requested_profiles = requested_profiles or set()
+    plan = [(obj, select_profiles(obj, requested_profiles)) for obj in objects]
+    total = sum(len(profiles) for _, profiles in plan)
+    if requested_profiles:
+        matched = {p["name"] for _, profiles in plan for p in profiles if p}
+        missing = sorted(requested_profiles - matched)
+        if missing:
+            raise SystemExit(f"unknown profile(s): {', '.join(missing)}")
     index = 0
 
-    for obj in objects:
-        profiles = load_parameter_files(obj) or [None]
+    for obj, profiles in plan:
         for profile in profiles:
             index += 1
             profile_name = profile["name"] if profile else "all"
@@ -260,7 +304,7 @@ def run_objects(objects: list[dict]) -> None:
             print(f"[{index}/{total}] {obj['label']} {profile_name}", flush=True)
             with log_path.open("w", encoding="utf-8") as log_file:
                 subprocess.run(
-                    build_command(obj, profile),
+                    build_command(obj, profile, skip_existing=skip_existing),
                     cwd=REPO_ROOT,
                     stdout=log_file,
                     stderr=subprocess.STDOUT,
@@ -286,10 +330,12 @@ def main() -> None:
         raise SystemExit(f"unknown label(s): {', '.join(missing)}")
 
     write_parameter_snapshots(config, objects)
-    if args.clean:
-        clean_outputs(objects)
     if not args.write_params_only:
-        run_objects(objects)
+        run_objects(
+            objects,
+            requested_profiles=set(args.profiles or []),
+            skip_existing=args.skip_existing,
+        )
 
 
 if __name__ == "__main__":

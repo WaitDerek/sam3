@@ -1,0 +1,110 @@
+{
+  "name": "box4_whole_crate",
+  "scene": "container",
+  "description": "Detect complete crate instances. Contents, dividers, cloth, and parts inside one crate are included in that crate mask, not split as separate objects.",
+  "prompts": [
+    "complete whole plastic storage crate including any contents as one object",
+    "entire plastic logistics tote bin as a single object",
+    "whole rectangular plastic crate, ignore internal dividers and items",
+    "complete blue or gray plastic parts bin as one container"
+  ],
+  "profiles": [
+    {
+      "name": "box4_single_whole_crate",
+      "scene": "single_container",
+      "sequence_prefixes": [
+        "20260526_095018",
+        "20260526_095317",
+        "20260526_095525",
+        "20260526_095859",
+        "20260526_101508"
+      ],
+      "threshold_overrides": {
+        "min_score": 0.18,
+        "min_relative_score": 0.2,
+        "min_area_frac": 0.01,
+        "max_area_frac": 0.75,
+        "iou_dedup": 0.3,
+        "score_threshold_detection": 0.1,
+        "new_det_thresh": 0.18,
+        "fill_holes": true,
+        "mask_close_kernel": 5,
+        "mask_close_iterations": 1,
+        "fill_convex": true,
+        "fill_convex_max_ratio": 4.0,
+        "save_instance_masks": true,
+        "instance_boundary_gap": 5,
+        "max_instances": 1
+      },
+      "exclude_stems": [
+        "20260526_131847__000347",
+        "20260526_131847__000348",
+        "20260526_131847__000349",
+        "20260526_131847__000350",
+        "20260526_131847__000351",
+        "20260526_131847__000352",
+        "20260526_131847__000353",
+        "20260526_131847__000354",
+        "20260526_131847__000355",
+        "20260526_131847__000390"
+      ]
+    },
+    {
+      "name": "box4_multi_whole_crate",
+      "scene": "multi_container",
+      "description": "Two crates side by side or touching. Use size/front-back single-crate prompts so each crate is one complete instance and touching crates are separated, instead of a greedy whole-crate prompt that merges both or only catches the larger crate's liner.",
+      "sequence_prefixes": [
+        "20260526_131847",
+        "20260526_132716",
+        "20260526_135046",
+        "20260526_154547",
+        "20260526_155605",
+        "20260526_160506",
+        "20260526_160849",
+        "20260526_163241",
+        "20260526_163721",
+        "20260526_164302",
+        "20260526_164759",
+        "20260526_165059"
+      ],
+      "threshold_overrides": {
+        "min_score": 0.15,
+        "min_relative_score": 0.25,
+        "min_area_frac": 0.01,
+        "max_area_frac": 0.75,
+        "iou_dedup": 0.2,
+        "score_threshold_detection": 0.05,
+        "new_det_thresh": 0.1,
+        "fill_holes": true,
+        "mask_close_kernel": 5,
+        "mask_close_iterations": 1,
+        "fill_convex": false,
+        "fill_convex_max_ratio": 4.0,
+        "save_instance_masks": true,
+        "instance_boundary_gap": 5,
+        "max_instances": 2,
+        "front_priority": true,
+        "front_priority_convex": false,
+        "front_priority_convex_max_ratio": 2.5
+      },
+      "prompts": [
+        "larger plastic crate only as one object",
+        "smaller plastic crate only as one object",
+        "single front lower plastic crate only, not the crate behind it",
+        "single rear upper plastic crate only, not the crate in front"
+      ],
+      "exclude_stems": [
+        "20260526_131847__000347",
+        "20260526_131847__000348",
+        "20260526_131847__000349",
+        "20260526_131847__000350",
+        "20260526_131847__000351",
+        "20260526_131847__000352",
+        "20260526_131847__000353",
+        "20260526_131847__000354",
+        "20260526_131847__000355",
+        "20260526_131847__000390"
+      ]
+    }
+  ]
+}

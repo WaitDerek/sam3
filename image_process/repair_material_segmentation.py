@@ -1,10 +1,10 @@
 """Re-run detection on previously-empty images with material-specific repair prompts.
 
 Loads SAM3.1 once, then for each material listed in REPAIRS:
-  - reads the list of empty image stems from image_process/out/_logs/_repair/<material>_empty.txt
+  - reads the list of empty image stems from out/_logs/_repair/<material>_empty.txt
   - deletes existing empty outputs (overlay/mask/metadata) so runs are idempotent
   - re-runs collect_detections() with repair prompts/thresholds
-  - writes new outputs into the same image_process/out/<material>/ directory tree
+  - writes new outputs into the same out/<material>/ directory tree
 """
 
 from __future__ import annotations

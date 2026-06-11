@@ -14,5 +14,5 @@ typing_extensions
 huggingface_hub
 
 # Optional: needed only when extracting Intel RealSense .bag files with
-# image_process/extract.py.
+# extract.py.
 # pyrealsense2

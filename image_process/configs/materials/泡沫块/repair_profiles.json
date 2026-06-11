@@ -5,7 +5,7 @@
     {
       "name": "mixed_test_view",
       "scene": "mixed_object",
-      "input_dir": "image_process/dataset/test",
+      "input_dir": "dataset/test",
       "pattern": "*.jpg",
       "threshold_overrides": {
         "min_score": 0.5,

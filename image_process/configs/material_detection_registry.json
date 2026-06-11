@@ -4,14 +4,14 @@
   "materials": {
     "passenger_wiper_1113": {
       "label": "副雨刮器",
-      "source_dir": "image_process/dataset/副雨刮器总成_1113/bgr",
-      "output_dir": "image_process/out/passenger_wiper_1100",
-      "primary_config": "image_process/configs/object_segmentation_params.json",
-      "runner": "image_process/run_material_segmentation.py --label 副雨刮器",
+      "source_dir": "dataset/副雨刮器总成_1113/bgr",
+      "output_dir": "out/passenger_wiper_1100",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 副雨刮器",
       "artifact_format": {
-        "overlay": "image_process/out/passenger_wiper_1100/overlays/<stem>_det.jpg",
-        "mask": "image_process/out/passenger_wiper_1100/masks/<stem>_mask.png",
-        "metadata": "image_process/out/passenger_wiper_1100/metadata/<stem>.json"
+        "overlay": "out/passenger_wiper_1100/overlays/<stem>_det.jpg",
+        "mask": "out/passenger_wiper_1100/masks/<stem>_mask.png",
+        "metadata": "out/passenger_wiper_1100/metadata/<stem>.json"
       },
       "stages": [
         {
@@ -43,7 +43,7 @@
             "curved black car wiper blade",
             "front windshield wiper blade"
           ],
-          "command_template": "python image_process/detect_material_bgr.py --input-dir image_process/dataset/副雨刮器总成_1113/bgr --output-dir image_process/out/passenger_wiper_1100 --label 副雨刮器 --min-score 0.35 --min-area-frac 0.0003 --max-area-frac 0.08 --max-bbox-fill-frac 0.55 --iou-dedup 0.4 --score-threshold-detection 0.2 --new-det-thresh 0.3 --include-prefix <table prefix> --text-prompt ...",
+          "command_template": "python detect_material_bgr.py --input-dir dataset/副雨刮器总成_1113/bgr --output-dir out/passenger_wiper_1100 --label 副雨刮器 --min-score 0.35 --min-area-frac 0.0003 --max-area-frac 0.08 --max-bbox-fill-frac 0.55 --iou-dedup 0.4 --score-threshold-detection 0.2 --new-det-thresh 0.3 --include-prefix <table prefix> --text-prompt ...",
           "do_not_reprocess_when": "Existing single/table overlays have acceptable boundaries; only rerun to restore missing files or after a deliberate prompt change."
         },
         {
@@ -505,32 +505,32 @@
             "curved windshield wiper blade with center connector only, not crate rack teeth"
           ],
           "do_not_reprocess_when": "Both blades are clean elongated strips: no black block at the lower-blade left end and no thin spike off the right tip; each blade mask is a single coherent component (000206's two blades touch at the center connectors and form one component; 000204's are separate = two components, both correct). Do not lower mask_min_x (left block returns) or raise mask_max_x (right spike returns); mask_min_x=500 / mask_max_x=872 are specific to the 204-206 camera pose and must not be applied material-wide.",
-          "implementation_note": "mask_min_x / mask_max_x are post-processing clips added to image_process/detect_material_bgr.py (applied to each candidate mask before area/dedup) and wired through image_process/run_material_segmentation.py from threshold_overrides."
+          "implementation_note": "mask_min_x / mask_max_x are post-processing clips added to detect_material_bgr.py (applied to each candidate mask before area/dedup) and wired through run_material_segmentation.py from threshold_overrides."
         }
       ],
       "rebuild_notes": [
-        "Do not use --clean for exploratory reruns unless the entire material will be rebuilt afterward.",
-        "For targeted fixes, use --include-prefix with --min-stem/--max-stem so stable single/table detections are not overwritten.",
-        "Current special CLI support added for reproducibility: image_process/detect_material_bgr.py accepts --max-instances, --min-relative-score, --min-stem, --max-stem, and --image-list; image_process/run_material_segmentation.py forwards these profile fields.",
-        "Scene-specific parameters are stored as separate JSON files under image_process/configs/materials/副雨刮器; use --label 副雨刮器 for the pure material label."
+        "--clean has been removed from run_material_segmentation.py (it forced a full rebuild of every profile). For a targeted re-run after a parameter change, use --profile <name> to run only the changed profile; use --skip-existing only to resume an interrupted run (not after a parameter change). To wipe an output dir, rm -rf out/<output_dir> manually.",
+        "For targeted fixes, use --profile, or --include-prefix with --min-stem/--max-stem, so stable single/table detections are not overwritten.",
+        "Current special CLI support added for reproducibility: detect_material_bgr.py accepts --max-instances, --min-relative-score, --min-stem, --max-stem, and --image-list; run_material_segmentation.py forwards these profile fields.",
+        "Scene-specific parameters are stored as separate JSON files under configs/materials/副雨刮器; use --label 副雨刮器 for the pure material label."
       ],
       "material_name": "副雨刮器",
-      "parameter_dir": "image_process/configs/materials/副雨刮器",
+      "parameter_dir": "configs/materials/副雨刮器",
       "parameter_files": [
-        "image_process/configs/materials/副雨刮器/table_view.json",
-        "image_process/configs/materials/副雨刮器/repair_profiles.json"
+        "configs/materials/副雨刮器/table_view.json",
+        "configs/materials/副雨刮器/repair_profiles.json"
       ]
     },
     "warning_triangle": {
       "label": "三角牌",
-      "source_dir": "image_process/dataset/三角警告牌_2217/bgr",
-      "output_dir": "image_process/out/warning_triangle",
-      "primary_config": "image_process/configs/object_segmentation_params.json",
-      "runner": "image_process/run_material_segmentation.py --label 三角牌",
+      "source_dir": "dataset/三角警告牌_2217/bgr",
+      "output_dir": "out/warning_triangle",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 三角牌",
       "artifact_format": {
-        "overlay": "image_process/out/warning_triangle/overlays/<stem>_det.jpg",
-        "mask": "image_process/out/warning_triangle/masks/<stem>_mask.png",
-        "metadata": "image_process/out/warning_triangle/metadata/<stem>.json"
+        "overlay": "out/warning_triangle/overlays/<stem>_det.jpg",
+        "mask": "out/warning_triangle/masks/<stem>_mask.png",
+        "metadata": "out/warning_triangle/metadata/<stem>.json"
       },
       "actual_visible_object": "red emergency warning-triangle storage case (rectangular plastic box with black end caps and printed label), not an unfolded triangle sign",
       "key_insight": "The case is red while every background (green table, gray floor, gray crate, silver bubble wrap) is non-red, so the prompt 'red rectangular object' is the strongest recall signal and false positives are rare. The dominant failure mode is dropping a real case via max_bbox_fill_frac: a perfectly horizontal axis-aligned case fills up to ~0.95 of its bbox, so the fill cap must stay >= 0.97. A too-tight cap silently drops the horizontal case (showing 1 instance where there are 2, or 0 when both are horizontal). Large case+crate merges are bounded by max_area_frac (0.12) and score (the whole-crate mask scores < 0.1), not by the fill cap.",
@@ -648,8 +648,8 @@
         {
           "name": "discontinuity_repair",
           "scene": "repair",
-          "module": "image_process/configs/materials/三角牌/repair_profiles.json",
-          "reason": "35 frames where the red case mask was incoherent: printed labels / arrows / specular highlights on the case were left as HOLES by the red text-prompt segmentation, so a single solid case came back fragmented. Fix is morphological: binary closing (5x5, 3 iters) bridges thin gaps and binary_fill_holes fills the enclosed label/arrow holes, yielding one solid coherent case mask. Holes here are larger than 1% of the bbox, so the clean_container_fps 1%-cap fill could not remove them — hence a dedicated repair with unconditional fill_holes. fill_holes / mask_close_* are post-process options added to image_process/detect_material_bgr.py and wired through image_process/run_material_segmentation.py. Each kept mask is then solidified to its per-component convex hull (fill_convex, fill_convex_max_ratio=1.3): this removes the printed-label / arrow / recess concavities that fill_holes cannot reach because they open to the case edge. The 1.3 area-ratio guard skips any component whose hull would add >30% area, so the contact V-pair (20260527_152814__000423: two cases touching at a vertex = one component, hull/area=1.39) is left as the two real cases instead of having the background wedge between the arms filled.",
+          "module": "configs/materials/三角牌/repair_profiles.json",
+          "reason": "35 frames where the red case mask was incoherent: printed labels / arrows / specular highlights on the case were left as HOLES by the red text-prompt segmentation, so a single solid case came back fragmented. Fix is morphological: binary closing (5x5, 3 iters) bridges thin gaps and binary_fill_holes fills the enclosed label/arrow holes, yielding one solid coherent case mask. Holes here are larger than 1% of the bbox, so the clean_container_fps 1%-cap fill could not remove them — hence a dedicated repair with unconditional fill_holes. fill_holes / mask_close_* are post-process options added to detect_material_bgr.py and wired through run_material_segmentation.py. Each kept mask is then solidified to its per-component convex hull (fill_convex, fill_convex_max_ratio=1.3): this removes the printed-label / arrow / recess concavities that fill_holes cannot reach because they open to the case edge. The 1.3 area-ratio guard skips any component whose hull would add >30% area, so the contact V-pair (20260527_152814__000423: two cases touching at a vertex = one component, hull/area=1.39) is left as the two real cases instead of having the background wedge between the arms filled.",
           "thresholds": {
             "min_score": 0.15,
             "min_area_frac": 0.0003,
@@ -712,7 +712,7 @@
         {
           "name": "stick_bar_repair",
           "scene": "repair",
-          "module": "image_process/configs/materials/三角牌/repair_profiles.json",
+          "module": "configs/materials/三角牌/repair_profiles.json",
           "stems": [
             "20260521_105812__000077",
             "20260521_105812__000091",
@@ -746,7 +746,7 @@
         {
           "name": "case_prompt_repair",
           "scene": "repair",
-          "module": "image_process/configs/materials/三角牌/repair_profiles.json",
+          "module": "configs/materials/三角牌/repair_profiles.json",
           "stems": [
             "20260522_104613__000093"
           ],
@@ -777,28 +777,28 @@
       "rebuild_notes": [
         "Scene assignment is by capture prefix; see each stage scope.prefixes.",
         "Do not lower max_bbox_fill_frac below 0.97 for any triangle scene: horizontal cases fill up to 0.95 of their bbox and get dropped otherwise.",
-        "Run with image_process/run_material_segmentation.py --label 三角牌; output goes to image_process/out/warning_triangle."
+        "Run with run_material_segmentation.py --label 三角牌; output goes to out/warning_triangle."
       ],
       "material_name": "三角牌",
-      "parameter_dir": "image_process/configs/materials/三角牌",
+      "parameter_dir": "configs/materials/三角牌",
       "parameter_files": [
-        "image_process/configs/materials/三角牌/table_view.json",
-        "image_process/configs/materials/三角牌/contact_pair.json",
-        "image_process/configs/materials/三角牌/bin_view.json"
+        "configs/materials/三角牌/table_view.json",
+        "configs/materials/三角牌/contact_pair.json",
+        "configs/materials/三角牌/bin_view.json"
       ],
       "note": "",
       "deletion_note": "2188 frames remain after some source bgr were deleted (2217->2188); orphan depth + detection artifacts for the deleted stems were removed and repair image_lists pruned to surviving stems. Deleted stems that had been part of repairs include 20260522_105812__000045 and 20260527_151710__001279."
     },
     "washer_filler_769": {
       "label": "洗涤器水壶加注管总成",
-      "source_dir": "image_process/dataset/洗涤器水壶加注管总成_1198/bgr",
-      "output_dir": "image_process/out/washer_filler_1208",
-      "primary_config": "image_process/configs/object_segmentation_params.json",
-      "runner": "image_process/run_material_segmentation.py --label 洗涤器水壶加注管总成",
+      "source_dir": "dataset/洗涤器水壶加注管总成_1198/bgr",
+      "output_dir": "out/washer_filler_1208",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 洗涤器水壶加注管总成",
       "artifact_format": {
-        "overlay": "image_process/out/washer_filler_1208/overlays/<stem>_det.jpg",
-        "mask": "image_process/out/washer_filler_1208/masks/<stem>_mask.png",
-        "metadata": "image_process/out/washer_filler_1208/metadata/<stem>.json"
+        "overlay": "out/washer_filler_1208/overlays/<stem>_det.jpg",
+        "mask": "out/washer_filler_1208/masks/<stem>_mask.png",
+        "metadata": "out/washer_filler_1208/metadata/<stem>.json"
       },
       "actual_visible_object": "white plastic washer-fluid filler tube/neck with a blue funnel-cap. Table views show a single tube next to a large translucent white plastic sheet; bin views show one or two tubes lying among brown cardboard dividers inside a gray crate.",
       "key_insight": "Two background look-alikes drive the false positives: (1) the large flat translucent WHITE PLASTIC SHEET on the green table matches generic 'white plastic ... tube' prompts and scores as high as or higher than the real tube, so it cannot be removed by score/relative-score — it is bounded by area: the sheet is >=0.08 area_fraction while a real table tube is 0.014-0.024, so max_area_frac=0.05 drops the sheet and keeps the tube; (2) the gray crate rim scores low (~0.4) versus the in-crate tubes (~0.9), so min_relative_score>=0.55 removes it. The generic prompt 'white plastic automotive filler tube' must stay in the TABLE set because it is the only prompt that finds the tube cleanly in 163500 (blue-cap prompts there return only the sheet+tube merged blob, which max_area_frac then drops, leaving an empty frame); it is safe because the sheet it also matches is always oversized. For BIN frames 107/108 the tube lies flat among dividers: the generic prompt fragments it into two divider-bleeding halves, so the bin set EXCLUDES the generic prompt and uses blue-cap/joint prompts that return one coherent (still slightly divider-bleeding) tube mask — this is near the practical limit for text-only segmentation of a thin tube pressed into matching dividers.",
@@ -806,7 +806,7 @@
         {
           "name": "bin_view_repair",
           "scene": "container",
-          "module": "image_process/configs/materials/洗涤器水壶加注管总成/repair_profiles.json",
+          "module": "configs/materials/洗涤器水壶加注管总成/repair_profiles.json",
           "stems": [
             "20260527_140319__000107",
             "20260527_140319__000108",
@@ -837,7 +837,7 @@
         {
           "name": "table_view_repair",
           "scene": "single_object",
-          "module": "image_process/configs/materials/洗涤器水壶加注管总成/repair_profiles.json",
+          "module": "configs/materials/洗涤器水壶加注管总成/repair_profiles.json",
           "stems": [
             "20260520_163500__000000",
             "20260520_163500__000001",
@@ -871,20 +871,20 @@
           "caution": "max_area_frac here is intentionally tighter (0.05) than the material default (0.1); these six frames are a sheet-specific repair and must keep the tight cap."
         }
       ],
-      "note": "These two stages are targeted image_list repairs over the 11 frames listed; the rest of the material is produced by image_process/configs/materials/洗涤器水壶加注管总成/default.json. The 1198/1208 numbers reflect that ~10 source images were deleted (orphan depth + detection artifacts were cleaned to match bgr=1198)."
+      "note": "These two stages are targeted image_list repairs over the 11 frames listed; the rest of the material is produced by configs/materials/洗涤器水壶加注管总成/default.json. The 1198/1208 numbers reflect that ~10 source images were deleted (orphan depth + detection artifacts were cleaned to match bgr=1198)."
     },
     "foam_block_979": {
       "label": "泡沫块",
-      "source_dir": "image_process/dataset/后轮鼓包内后侧泡沫块_1635/bgr",
-      "output_dir": "image_process/out/foam_block_1635",
-      "primary_config": "image_process/configs/object_segmentation_params.json",
-      "runner": "image_process/run_material_segmentation.py --label 泡沫块",
+      "source_dir": "dataset/后轮鼓包内后侧泡沫块_1635/bgr",
+      "output_dir": "out/foam_block_1635",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 泡沫块",
       "actual_visible_object": "two dark (black/teal) foam packaging blocks on a green table",
       "stages": [
         {
           "name": "left_bg_fp_repair",
           "scene": "repair",
-          "module": "image_process/configs/materials/泡沫块/repair_profiles.json",
+          "module": "configs/materials/泡沫块/repair_profiles.json",
           "stems": [
             "20260521_171129__000025",
             "20260521_171129__000034",
@@ -922,16 +922,16 @@
     },
     "power_tailgate_system_854": {
       "label": "背门自动开闭系统",
-      "source_dir": "image_process/dataset/背门自动开闭系统ECU控制器总成_1407/bgr",
-      "output_dir": "image_process/out/power_tailgate",
-      "primary_config": "image_process/configs/object_segmentation_params.json",
-      "runner": "image_process/run_material_segmentation.py --label 背门自动开闭系统",
+      "source_dir": "dataset/背门自动开闭系统ECU控制器总成_1407/bgr",
+      "output_dir": "out/power_tailgate",
+      "primary_config": "configs/object_segmentation_params.json",
+      "runner": "run_material_segmentation.py --label 背门自动开闭系统",
       "actual_visible_object": "blue/black automotive ECU control modules with white barcode labels; on a green table (140702 etc.) or standing among cardboard dividers in a gray crate whose front bears a blue printed label '苏州麦格纳 H箱' (141640).",
       "stages": [
         {
           "name": "bin_view_141640",
           "scene": "container",
-          "module": "image_process/configs/materials/背门自动开闭系统/repair_profiles.json",
+          "module": "configs/materials/背门自动开闭系统/repair_profiles.json",
           "scope": {
             "prefixes": [
               "20260521_141640"
@@ -963,7 +963,7 @@
         {
           "name": "table_view_140702_large_repair",
           "scene": "single_object",
-          "module": "image_process/configs/materials/背门自动开闭系统/repair_profiles.json",
+          "module": "configs/materials/背门自动开闭系统/repair_profiles.json",
           "stems": [
             "20260521_140702__000326",
             "20260521_140702__000332",
@@ -994,7 +994,7 @@
         {
           "name": "bin_view_134_dim",
           "scene": "container",
-          "module": "image_process/configs/materials/背门自动开闭系统/repair_profiles.json",
+          "module": "configs/materials/背门自动开闭系统/repair_profiles.json",
           "scope": {
             "prefixes": [
               "20260527_134449",
@@ -1028,7 +1028,7 @@
         {
           "name": "bin_view_134449_dim_repair",
           "scene": "container",
-          "module": "image_process/configs/materials/背门自动开闭系统/repair_profiles.json",
+          "module": "configs/materials/背门自动开闭系统/repair_profiles.json",
           "reason": "Targeted supplementary detection for 24 user-listed very-dim 134449 frames that bin_view_134_dim (min_score 0.13) left as misses. Lowered min_score to 0.10 (the dim modules score only ~0.10-0.24) while keeping the shape filters max_aspect=3.0 + max_area_frac=0.03 + min_area_frac=0.0006 so the dropped FPs (whole-crate match at area_fraction ~0.25-0.31, crate rim, corner blobs) stay out. Recovers a module in 17/24 frames (14 with both modules, 3 with one).",
           "thresholds": {
             "min_score": 0.1,
@@ -1073,6 +1073,571 @@
           ]
         }
       ]
+    },
+    "box1": {
+      "label": "料箱",
+      "source_dir": "dataset/box1/bgr",
+      "output_dir": "out/box1",
+      "primary_config": "configs/object_segmentation_params.json",
+      "parameter_file": "configs/materials/料箱/box1_whole_crate.json",
+      "runner": "python run_material_segmentation.py --label box1",
+      "artifact_format": {
+        "overlay": "out/box1/overlays/<stem>_det.jpg",
+        "mask": "out/box1/masks/<stem>_mask.png",
+        "metadata": "out/box1/metadata/<stem>.json",
+        "instance_mask": "out/box1/instance_masks/<stem>_instances.png",
+        "instance_overlay": "out/box1/instance_overlays/<stem>_instances.jpg"
+      },
+      "stages": [
+        {
+          "name": "box1_single_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260525_162559",
+              "20260525_165059",
+              "20260525_165239",
+              "20260525_165315",
+              "20260525_165535",
+              "20260525_170117"
+            ]
+          },
+          "module": "sam_text_prompt_whole_crate_single_instance",
+          "reason": "Single-crate frames must keep the full visible crate as one object and include contents as part of that crate.",
+          "thresholds": {
+            "min_score": 0.18,
+            "min_relative_score": 0.2,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.3,
+            "score_threshold_detection": 0.1,
+            "new_det_thresh": 0.18,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": true,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 1
+          },
+          "prompts": [
+            "complete whole plastic storage crate including any contents as one object",
+            "entire plastic logistics tote bin as a single object",
+            "whole rectangular plastic crate, ignore internal dividers and items",
+            "complete blue or gray plastic parts bin as one container"
+          ]
+        },
+        {
+          "name": "box1_multi_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_151422",
+              "20260526_152036",
+              "20260526_152531",
+              "20260526_164302",
+              "20260526_164759",
+              "20260526_165059",
+              "20260526_165502",
+              "20260526_170025",
+              "20260526_170537",
+              "20260527_100906",
+              "20260527_101309",
+              "20260527_101723"
+            ],
+            "exclude_stems": []
+          },
+          "module": "sam_text_prompt_size_front_back_two_instance_cap",
+          "reason": "Multi-crate frames must keep each visible crate complete AND separate touching crates. The earlier greedy whole-crate prompts ('whole rectangular plastic crate, ignore internal dividers', 'complete blue or gray plastic parts bin') failed two ways verified on box1: (1) two touching crates came back as ONE merged SAM mask spanning both (e.g. 20260526_151422__000096, 20260526_152036__000060) — not splittable by iou_dedup or kmeans, which only carves arbitrary wedges; (2) the larger crate was detected only via its bright inner liner, dropping the gray crate's outer top-left rim and left wall (e.g. 20260526_151422__000000-000005, large-crate bbox stopped at [404,53,993,304]). Fix: use size/front-back single-crate prompts so SAM returns one mask per crate. Verified on 060/096/000001/000003 — two complete separated instances; larger-crate bbox on 000001 expanded to [349,46,1012,436], recovering the top-left corner. Detection thresholds were loosened (min_score 0.18->0.15, score_threshold_detection 0.1->0.05, new_det_thresh 0.18->0.1, iou_dedup 0.3->0.2) so the second crate is recalled reliably, and min_relative_score 0.2->0.25 drops weak duplicate masks. Do not revert to greedy whole-crate prompts here; they regress the merge and liner-only failures. UPDATE 2026-06-10: convex completion disabled here (fill_convex=false, front_priority_convex=false). The convex hull cut the top-left corner of the rotated larger crate (reported defect on 20260526_151422__000000-000028) and left the smaller crate's lower face uncovered (20260526_151422__000073/000074/000086/000087); disabling it makes masks follow the true crate outline while non-convex front_priority still separates touching crates and keeps the exposed crate complete. Re-verified on 000000/000010/000074/000087/000096. Trade-off: a liner-filled crate now shows its liner opening instead of a solid blob (accepted per user direction). Do not re-enable convex fill here.",
+          "thresholds": {
+            "min_score": 0.15,
+            "min_relative_score": 0.25,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.05,
+            "new_det_thresh": 0.1,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": false,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 2,
+            "front_priority": true,
+            "front_priority_convex": false,
+            "front_priority_convex_max_ratio": 2.5
+          },
+          "prompts": [
+            "larger plastic crate only as one object",
+            "smaller plastic crate only as one object",
+            "single front lower plastic crate only, not the crate behind it",
+            "single rear upper plastic crate only, not the crate in front"
+          ],
+          "validation_examples": [
+            "20260526_151422__000001",
+            "20260526_151422__000096",
+            "20260526_152036__000060"
+          ]
+        },
+        {
+          "name": "box1_151422_late_right_attached_repair",
+          "scope": {
+            "prefixes": [
+              "20260526_151422"
+            ],
+            "min_stem": "20260526_151422__000097",
+            "max_stem": "20260526_151422__000119"
+          },
+          "module": "sam_text_prompt_side_specific_large_left_small_right",
+          "reason": "Frames such as 20260526_151422__000100 and __000101 merge the right small crate with the large left crate under generic prompts; __000097 also underfills the left crate. Side-specific prompts recover two crate instances and include liner/content in the large crate.",
+          "thresholds": {
+            "min_score": 0.05,
+            "min_relative_score": 0.05,
+            "min_area_frac": 0.001,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.03,
+            "new_det_thresh": 0.05,
+            "max_instances": 2,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": true,
+            "fill_convex_max_ratio": 4.0,
+            "front_priority": true,
+            "front_priority_convex": true,
+            "front_priority_convex_max_ratio": 2.5,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5
+          },
+          "prompts": [
+            "large rear gray plastic crate including silver liner contents",
+            "large left gray plastic storage crate including everything inside",
+            "small right gray plastic crate only",
+            "small foreground gray plastic bin only",
+            "right side smaller plastic crate separate from large crate"
+          ],
+          "validation_examples": [
+            "20260526_151422__000097",
+            "20260526_151422__000100",
+            "20260526_151422__000101"
+          ]
+        }
+      ],
+      "known_bad_stems": [],
+      "do_not_reprocess_when": "Do not split objects, partitions, cloth, or parts inside one crate into separate instances; only separate distinct crate bodies.",
+      "occlusion_policy": "Front/lower crate has priority. Multi-container profiles run with convex completion DISABLED (fill_convex=false, front_priority_convex=false): the convex hull cut the corners of rotated crates and could not recover a missing crate face, so masks now follow the true crate outline. Front instances are then subtracted (non-convex) from rear instances so foreground crates keep their visible corners and touching crates separate. Trade-off accepted per user direction (separation + exposed-crate completeness): a liner-filled crate shows its liner opening through the mask instead of being a solid blob."
+    },
+    "box2": {
+      "label": "料箱",
+      "source_dir": "dataset/box2/bgr",
+      "output_dir": "out/box2",
+      "primary_config": "configs/object_segmentation_params.json",
+      "parameter_file": "configs/materials/料箱/box2_whole_crate.json",
+      "runner": "python run_material_segmentation.py --label box2",
+      "artifact_format": {
+        "overlay": "out/box2/overlays/<stem>_det.jpg",
+        "mask": "out/box2/masks/<stem>_mask.png",
+        "metadata": "out/box2/metadata/<stem>.json",
+        "instance_mask": "out/box2/instance_masks/<stem>_instances.png",
+        "instance_overlay": "out/box2/instance_overlays/<stem>_instances.jpg"
+      },
+      "stages": [
+        {
+          "name": "box2_multi_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260525_170441",
+              "20260525_170712",
+              "20260525_171004",
+              "20260525_171615",
+              "20260526_142020",
+              "20260526_143846",
+              "20260526_160849",
+              "20260526_163241",
+              "20260526_163721",
+              "20260527_095149",
+              "20260527_095755",
+              "20260527_100259",
+              "20260527_100906",
+              "20260527_101309",
+              "20260527_101723"
+            ],
+            "exclude_stems": []
+          },
+          "module": "sam_text_prompt_size_front_back_two_instance_cap",
+          "reason": "Multi-crate frames must keep each visible crate complete AND separate touching crates. Same fix as box1_multi_whole_crate: greedy whole-crate prompts merged two touching crates into one mask and detected the larger crate only via its inner liner. Switched to size/front-back single-crate prompts with loosened detection thresholds (min_score 0.15, score_threshold_detection 0.05, new_det_thresh 0.1, iou_dedup 0.2, min_relative_score 0.25) so SAM returns one complete mask per crate. box2 shares box1's crate geometry and dataset; do not revert to greedy whole-crate prompts here. UPDATE 2026-06-10: convex completion disabled (fill_convex=false, front_priority_convex=false) like box1_multi_whole_crate — the convex hull cut rotated-crate corners and left small-crate faces uncovered; masks now follow the true crate outline while non-convex front_priority preserves separation and exposed-crate completeness. Do not re-enable convex fill here.",
+          "thresholds": {
+            "min_score": 0.15,
+            "min_relative_score": 0.25,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.05,
+            "new_det_thresh": 0.1,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": false,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 2,
+            "front_priority": true,
+            "front_priority_convex": false,
+            "front_priority_convex_max_ratio": 2.5
+          },
+          "prompts": [
+            "larger plastic crate only as one object",
+            "smaller plastic crate only as one object",
+            "single front lower plastic crate only, not the crate behind it",
+            "single rear upper plastic crate only, not the crate in front"
+          ]
+        }
+      ],
+      "known_bad_stems": [],
+      "do_not_reprocess_when": "Do not split objects, partitions, cloth, or parts inside one crate into separate instances; only separate distinct crate bodies.",
+      "occlusion_policy": "Front/lower crate has priority. Multi-container profiles run with convex completion DISABLED (fill_convex=false, front_priority_convex=false): the convex hull cut the corners of rotated crates and could not recover a missing crate face, so masks now follow the true crate outline. Front instances are then subtracted (non-convex) from rear instances so foreground crates keep their visible corners and touching crates separate. Trade-off accepted per user direction (separation + exposed-crate completeness): a liner-filled crate shows its liner opening through the mask instead of being a solid blob."
+    },
+    "box3": {
+      "label": "料箱",
+      "source_dir": "dataset/box3/bgr",
+      "output_dir": "out/box3",
+      "primary_config": "configs/object_segmentation_params.json",
+      "parameter_file": "configs/materials/料箱/box3_whole_crate.json",
+      "runner": "python run_material_segmentation.py --label box3",
+      "artifact_format": {
+        "overlay": "out/box3/overlays/<stem>_det.jpg",
+        "mask": "out/box3/masks/<stem>_mask.png",
+        "metadata": "out/box3/metadata/<stem>.json",
+        "instance_mask": "out/box3/instance_masks/<stem>_instances.png",
+        "instance_overlay": "out/box3/instance_overlays/<stem>_instances.jpg"
+      },
+      "stages": [
+        {
+          "name": "box3_single_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_093546",
+              "20260526_093840",
+              "20260526_094227",
+              "20260526_094536"
+            ]
+          },
+          "module": "sam_text_prompt_whole_crate_single_instance",
+          "reason": "Single-crate frames must keep the full visible crate as one object and include contents as part of that crate.",
+          "thresholds": {
+            "min_score": 0.18,
+            "min_relative_score": 0.2,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.3,
+            "score_threshold_detection": 0.1,
+            "new_det_thresh": 0.18,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": true,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 1
+          },
+          "prompts": [
+            "complete whole plastic storage crate including any contents as one object",
+            "entire plastic logistics tote bin as a single object",
+            "whole rectangular plastic crate, ignore internal dividers and items",
+            "complete blue or gray plastic parts bin as one container"
+          ]
+        },
+        {
+          "name": "box3_multi_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_105841",
+              "20260526_111256",
+              "20260526_112049",
+              "20260526_154547",
+              "20260526_155605",
+              "20260526_160506",
+              "20260526_165502",
+              "20260526_170025",
+              "20260526_170537",
+              "20260527_095149",
+              "20260527_095755",
+              "20260527_100259"
+            ],
+            "exclude_stems": [
+              "20260526_111256__000417"
+            ]
+          },
+          "module": "sam_text_prompt_size_front_back_two_instance_cap",
+          "reason": "Multi-crate frames must keep each visible crate complete AND separate touching crates. Same fix as box1_multi_whole_crate: greedy whole-crate prompts merged two touching crates into one mask and detected the larger crate only via its inner liner. Switched to size/front-back single-crate prompts with loosened detection thresholds (min_score 0.15, score_threshold_detection 0.05, new_det_thresh 0.1, iou_dedup 0.2, min_relative_score 0.25) so SAM returns one complete mask per crate. Do not revert to greedy whole-crate prompts here. UPDATE 2026-06-10: convex completion disabled (fill_convex=false, front_priority_convex=false) like box1_multi_whole_crate — the convex hull cut rotated-crate corners and left small-crate faces uncovered; masks now follow the true crate outline while non-convex front_priority preserves separation and exposed-crate completeness. Do not re-enable convex fill here.",
+          "thresholds": {
+            "min_score": 0.15,
+            "min_relative_score": 0.25,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.05,
+            "new_det_thresh": 0.1,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": false,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 2,
+            "front_priority": true,
+            "front_priority_convex": false,
+            "front_priority_convex_max_ratio": 2.5
+          },
+          "prompts": [
+            "larger plastic crate only as one object",
+            "smaller plastic crate only as one object",
+            "single front lower plastic crate only, not the crate behind it",
+            "single rear upper plastic crate only, not the crate in front"
+          ]
+        }
+      ],
+      "known_bad_stems": [
+        "20260526_111256__000417"
+      ],
+      "do_not_reprocess_when": "Do not split objects, partitions, cloth, or parts inside one crate into separate instances; only separate distinct crate bodies.",
+      "occlusion_policy": "Front/lower crate has priority. Multi-container profiles run with convex completion DISABLED (fill_convex=false, front_priority_convex=false): the convex hull cut the corners of rotated crates and could not recover a missing crate face, so masks now follow the true crate outline. Front instances are then subtracted (non-convex) from rear instances so foreground crates keep their visible corners and touching crates separate. Trade-off accepted per user direction (separation + exposed-crate completeness): a liner-filled crate shows its liner opening through the mask instead of being a solid blob."
+    },
+    "box4": {
+      "label": "料箱",
+      "source_dir": "dataset/box4/bgr",
+      "output_dir": "out/box4",
+      "primary_config": "configs/object_segmentation_params.json",
+      "parameter_file": "configs/materials/料箱/box4_whole_crate.json",
+      "runner": "python run_material_segmentation.py --label box4",
+      "artifact_format": {
+        "overlay": "out/box4/overlays/<stem>_det.jpg",
+        "mask": "out/box4/masks/<stem>_mask.png",
+        "metadata": "out/box4/metadata/<stem>.json",
+        "instance_mask": "out/box4/instance_masks/<stem>_instances.png",
+        "instance_overlay": "out/box4/instance_overlays/<stem>_instances.jpg"
+      },
+      "stages": [
+        {
+          "name": "box4_single_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_095018",
+              "20260526_095317",
+              "20260526_095525",
+              "20260526_095859",
+              "20260526_101508"
+            ]
+          },
+          "module": "sam_text_prompt_whole_crate_single_instance",
+          "reason": "Single-crate frames must keep the full visible crate as one object and include contents as part of that crate.",
+          "thresholds": {
+            "min_score": 0.18,
+            "min_relative_score": 0.2,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.3,
+            "score_threshold_detection": 0.1,
+            "new_det_thresh": 0.18,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": true,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 1
+          },
+          "prompts": [
+            "complete whole plastic storage crate including any contents as one object",
+            "entire plastic logistics tote bin as a single object",
+            "whole rectangular plastic crate, ignore internal dividers and items",
+            "complete blue or gray plastic parts bin as one container"
+          ]
+        },
+        {
+          "name": "box4_multi_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_131847",
+              "20260526_132716",
+              "20260526_135046",
+              "20260526_154547",
+              "20260526_155605",
+              "20260526_160506",
+              "20260526_160849",
+              "20260526_163241",
+              "20260526_163721",
+              "20260526_164302",
+              "20260526_164759",
+              "20260526_165059"
+            ],
+            "exclude_stems": [
+              "20260526_131847__000347",
+              "20260526_131847__000348",
+              "20260526_131847__000349",
+              "20260526_131847__000350",
+              "20260526_131847__000351",
+              "20260526_131847__000352",
+              "20260526_131847__000353",
+              "20260526_131847__000354",
+              "20260526_131847__000355",
+              "20260526_131847__000390"
+            ]
+          },
+          "module": "sam_text_prompt_size_front_back_two_instance_cap",
+          "reason": "Multi-crate frames must keep each visible crate complete AND separate touching crates. Same fix as box1_multi_whole_crate: greedy whole-crate prompts merged two touching crates into one mask and detected the larger crate only via its inner liner. Switched to size/front-back single-crate prompts with loosened detection thresholds (min_score 0.15, score_threshold_detection 0.05, new_det_thresh 0.1, iou_dedup 0.2, min_relative_score 0.25) so SAM returns one complete mask per crate. Do not revert to greedy whole-crate prompts here. UPDATE 2026-06-10: convex completion disabled (fill_convex=false, front_priority_convex=false) like box1_multi_whole_crate — the convex hull cut rotated-crate corners and left small-crate faces uncovered; masks now follow the true crate outline while non-convex front_priority preserves separation and exposed-crate completeness. Do not re-enable convex fill here.",
+          "thresholds": {
+            "min_score": 0.15,
+            "min_relative_score": 0.25,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.05,
+            "new_det_thresh": 0.1,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": false,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 2,
+            "front_priority": true,
+            "front_priority_convex": false,
+            "front_priority_convex_max_ratio": 2.5
+          },
+          "prompts": [
+            "larger plastic crate only as one object",
+            "smaller plastic crate only as one object",
+            "single front lower plastic crate only, not the crate behind it",
+            "single rear upper plastic crate only, not the crate in front"
+          ]
+        }
+      ],
+      "known_bad_stems": [
+        "20260526_131847__000347",
+        "20260526_131847__000348",
+        "20260526_131847__000349",
+        "20260526_131847__000350",
+        "20260526_131847__000351",
+        "20260526_131847__000352",
+        "20260526_131847__000353",
+        "20260526_131847__000354",
+        "20260526_131847__000355",
+        "20260526_131847__000390"
+      ],
+      "do_not_reprocess_when": "Do not split objects, partitions, cloth, or parts inside one crate into separate instances; only separate distinct crate bodies.",
+      "occlusion_policy": "Front/lower crate has priority. Multi-container profiles run with convex completion DISABLED (fill_convex=false, front_priority_convex=false): the convex hull cut the corners of rotated crates and could not recover a missing crate face, so masks now follow the true crate outline. Front instances are then subtracted (non-convex) from rear instances so foreground crates keep their visible corners and touching crates separate. Trade-off accepted per user direction (separation + exposed-crate completeness): a liner-filled crate shows its liner opening through the mask instead of being a solid blob."
+    },
+    "box5": {
+      "label": "料箱",
+      "source_dir": "dataset/box5/bgr",
+      "output_dir": "out/box5",
+      "primary_config": "configs/object_segmentation_params.json",
+      "parameter_file": "configs/materials/料箱/box5_whole_crate.json",
+      "runner": "python run_material_segmentation.py --label box5",
+      "artifact_format": {
+        "overlay": "out/box5/overlays/<stem>_det.jpg",
+        "mask": "out/box5/masks/<stem>_mask.png",
+        "metadata": "out/box5/metadata/<stem>.json",
+        "instance_mask": "out/box5/instance_masks/<stem>_instances.png",
+        "instance_overlay": "out/box5/instance_overlays/<stem>_instances.jpg"
+      },
+      "stages": [
+        {
+          "name": "box5_single_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_101913",
+              "20260526_103230",
+              "20260526_103527",
+              "20260526_103841"
+            ]
+          },
+          "module": "sam_text_prompt_whole_crate_single_instance",
+          "reason": "Single-crate frames must keep the full visible crate as one object and include contents as part of that crate.",
+          "thresholds": {
+            "min_score": 0.18,
+            "min_relative_score": 0.2,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.3,
+            "score_threshold_detection": 0.1,
+            "new_det_thresh": 0.18,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": true,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 1
+          },
+          "prompts": [
+            "complete whole plastic storage crate including any contents as one object",
+            "entire plastic logistics tote bin as a single object",
+            "whole rectangular plastic crate, ignore internal dividers and items",
+            "complete blue or gray plastic parts bin as one container"
+          ]
+        },
+        {
+          "name": "box5_multi_whole_crate",
+          "scope": {
+            "prefixes": [
+              "20260526_105841",
+              "20260526_111256",
+              "20260526_112049",
+              "20260526_131847",
+              "20260526_132716",
+              "20260526_135046",
+              "20260526_142020",
+              "20260526_143846",
+              "20260526_151422",
+              "20260526_152036",
+              "20260526_152531"
+            ],
+            "exclude_stems": []
+          },
+          "module": "sam_text_prompt_size_front_back_two_instance_cap",
+          "reason": "Multi-crate frames must keep each visible crate complete AND separate touching crates. Same fix as box1_multi_whole_crate: greedy whole-crate prompts merged two touching crates into one mask and detected the larger crate only via its inner liner. Switched to size/front-back single-crate prompts with loosened detection thresholds (min_score 0.15, score_threshold_detection 0.05, new_det_thresh 0.1, iou_dedup 0.2, min_relative_score 0.25) so SAM returns one complete mask per crate. Do not revert to greedy whole-crate prompts here. UPDATE 2026-06-10: convex completion disabled (fill_convex=false, front_priority_convex=false) like box1_multi_whole_crate — the convex hull cut rotated-crate corners and left small-crate faces uncovered; masks now follow the true crate outline while non-convex front_priority preserves separation and exposed-crate completeness. Do not re-enable convex fill here.",
+          "thresholds": {
+            "min_score": 0.15,
+            "min_relative_score": 0.25,
+            "min_area_frac": 0.01,
+            "max_area_frac": 0.75,
+            "iou_dedup": 0.2,
+            "score_threshold_detection": 0.05,
+            "new_det_thresh": 0.1,
+            "fill_holes": true,
+            "mask_close_kernel": 5,
+            "mask_close_iterations": 1,
+            "fill_convex": false,
+            "fill_convex_max_ratio": 4.0,
+            "save_instance_masks": true,
+            "instance_boundary_gap": 5,
+            "max_instances": 2,
+            "front_priority": true,
+            "front_priority_convex": false,
+            "front_priority_convex_max_ratio": 2.5
+          },
+          "prompts": [
+            "larger plastic crate only as one object",
+            "smaller plastic crate only as one object",
+            "single front lower plastic crate only, not the crate behind it",
+            "single rear upper plastic crate only, not the crate in front"
+          ]
+        }
+      ],
+      "known_bad_stems": [],
+      "open_issue_draped_film": "Single-container prefix 20260526_101913 (and likely 103230/103841) has a translucent plastic liner/film draped out of the crate onto the floor, contiguous with the crate body. Text-prompt SAM cannot reliably separate film from crate: a crate-only prompt ('rectangular ribbed plastic storage crate body only') is stable within one angle cluster (e.g. 000111-000116 all crate-only ~0.39 area) but flips to a merged full-width mask in other clusters (e.g. 000136-000144), and convex-fill is not the cause (raw SAM mask already spans crate+film). Probes v1-v6 in out/box5_sheet_probe confirm no single prompt/threshold set is robust across all 30 frames. Left as-is (film included) pending a depth/height-based exclusion (crate body rises above floor; film lies flat) or a per-cluster repair decision.",
+      "do_not_reprocess_when": "Do not split objects, partitions, cloth, or parts inside one crate into separate instances; only separate distinct crate bodies.",
+      "occlusion_policy": "Front/lower crate has priority. Multi-container profiles run with convex completion DISABLED (fill_convex=false, front_priority_convex=false): the convex hull cut the corners of rotated crates and could not recover a missing crate face, so masks now follow the true crate outline. Front instances are then subtracted (non-convex) from rear instances so foreground crates keep their visible corners and touching crates separate. Trade-off accepted per user direction (separation + exposed-crate completeness): a liner-filled crate shows its liner opening through the mask instead of being a solid blob."
     }
   }
 }

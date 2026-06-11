@@ -100,8 +100,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Merge mode: optional name for the merged dataset folder. "
-            "Example: --merge-output image_process/dataset --merge-name "
-            "merged_demo creates image_process/dataset/merged_demo."
+            "Example: --merge-output dataset --merge-name "
+            "merged_demo creates dataset/merged_demo."
         ),
     )
     parser.add_argument(
