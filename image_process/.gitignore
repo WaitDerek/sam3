@@ -1,0 +1,12 @@
+# Local input data, delivery archives, and generated outputs.
+/dataset/
+/out/
+/changan/
+
+# Local timestamp lists used during one-off repair/check runs.
+/configs/*.txt
+
+# Python and tool caches local to this workspace.
+/__pycache__/
+*.py[cod]
+

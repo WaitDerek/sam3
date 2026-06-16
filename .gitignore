@@ -151,21 +151,3 @@ Thumbs.db
 # BPE vocabulary files
 *.bpe
 *.vocab
-
-# Local material data and generated outputs
-/data
-/changan
-/out
-/image_process/data
-/image_process/dataset
-/image_process/changan
-/image_process/out
-
-# Local one-off image lists for targeted repair/check runs
-/configs/*.txt
-/image_process/configs/*.txt
-
-/.omx
-/.agents
-/.claude
-/.codex

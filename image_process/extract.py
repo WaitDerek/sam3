@@ -383,8 +383,8 @@ def copy_file_resumable(src: Path, dst: Path, overwrite: bool) -> str:
             shutil.copyfile(src, dst)
             return "overwritten"
         return "skipped_existing"
-    # Do not use shutil.copy2 here. On Windows-mounted paths (e.g. WSL /mnt/*
-    # drives), copying file timestamps/permission metadata may fail with PermissionError.
+    # Do not use shutil.copy2 here. On mounted external filesystems, copying
+    # file timestamps/permission metadata may fail with PermissionError.
     shutil.copyfile(src, dst)
     return "copied"
 
