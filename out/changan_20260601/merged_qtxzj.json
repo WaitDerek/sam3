@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-02 Changan material batch with confirmed names",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "背门驱动机构撑杆上球头销支架（左）",
+  "source_name": "qtxzj",
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_qtxzj/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_qtxzj/sam3_segmentation",
+  "parameters": {
+    "label": "背门驱动机构撑杆上球头销支架（左）",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_qtxzj/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_qtxzj/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/merged_qtxzj.json",
+    "thresholds": {
+      "min_score": 0.25,
+      "min_area_frac": 0.0002,
+      "max_area_frac": 0.08,
+      "max_bbox_fill_frac": 0.85,
+      "iou_dedup": 0.4,
+      "score_threshold_detection": 0.12,
+      "new_det_thresh": 0.18
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "black metal automotive bracket with ball stud",
+          "tailgate strut upper ball pin bracket",
+          "black metal mounting bracket with bolt holes"
+        ]
+      }
+    ],
+    "source_name": "qtxzj",
+    "legacy_labels": [
+      "merged_qtxzj"
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "black metal automotive bracket with ball stud",
+        "tailgate strut upper ball pin bracket",
+        "black metal mounting bracket with bolt holes"
+      ]
+    }
+  ]
+}

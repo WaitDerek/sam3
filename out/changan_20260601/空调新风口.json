@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-01 Changan material batch on E drive",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "空调新风口",
+  "source_name": null,
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_ktxfk/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_ktxfk/sam3_segmentation",
+  "parameters": {
+    "label": "空调新风口",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_ktxfk/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_ktxfk/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/空调新风口.json",
+    "thresholds": {
+      "min_score": 0.3,
+      "min_area_frac": 0.0003,
+      "max_area_frac": 0.2,
+      "max_bbox_fill_frac": 0.8,
+      "iou_dedup": 0.4,
+      "score_threshold_detection": 0.15,
+      "new_det_thresh": 0.25
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "black plastic air duct",
+          "black rectangular plastic vent duct",
+          "black automotive plastic duct housing",
+          "black plastic ventilation duct in bin"
+        ]
+      }
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "black plastic air duct",
+        "black rectangular plastic vent duct",
+        "black automotive plastic duct housing",
+        "black plastic ventilation duct in bin"
+      ]
+    }
+  ]
+}

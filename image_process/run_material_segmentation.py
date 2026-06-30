@@ -4,21 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-from material_paths import (
-    CONFIG_DIR,
-    OUT_DIR,
-    REPO_ROOT,
-    TOOL_DIR,
-    relative_to_repo,
-    resolve_config_path,
-    resolve_repo_path,
-)
 
-DEFAULT_CONFIG = CONFIG_DIR / "object_segmentation_params.json"
+ROOT = Path(__file__).resolve().parent
+DEFAULT_CONFIG = ROOT / "configs" / "object_segmentation_params.json"
+OUT_DIR = ROOT / "out"
 LOG_DIR = OUT_DIR / "_logs"
 
 
@@ -34,22 +28,9 @@ def parse_args() -> argparse.Namespace:
         help="Only run this label. Repeat for multiple labels.",
     )
     parser.add_argument(
-        "--profile",
-        action="append",
-        dest="profiles",
-        help=(
-            "Only run profiles with this name (e.g. box1_multi_whole_crate). "
-            "Repeat for multiple profiles. Lets you re-run just the profile you "
-            "changed instead of every profile in the box."
-        ),
-    )
-    parser.add_argument(
-        "--skip-existing",
+        "--clean",
         action="store_true",
-        help=(
-            "Skip frames whose output already exists. Use to resume an "
-            "interrupted run; omit to overwrite (e.g. after a parameter change)."
-        ),
+        help="Remove configured output directories before running.",
     )
     parser.add_argument(
         "--write-params-only",
@@ -66,15 +47,17 @@ def merge_thresholds(obj: dict, profile: dict | None = None) -> dict:
     return thresholds
 
 
+def resolve_config_path(path: str | Path) -> Path:
+    path = Path(path)
+    return path if path.is_absolute() else ROOT / path
+
+
 def load_parameter_files(obj: dict) -> list[dict]:
     profiles = []
     for file_ref in obj.get("parameter_files", []):
         path = resolve_config_path(file_ref)
         payload = json.loads(path.read_text(encoding="utf-8"))
-        try:
-            parameter_file = str(path.relative_to(TOOL_DIR))
-        except ValueError:
-            parameter_file = relative_to_repo(path)
+        parameter_file = str(path.relative_to(ROOT))
         if "profiles" in payload:
             defaults = {key: value for key, value in payload.items() if key != "profiles"}
             for profile_payload in payload["profiles"]:
@@ -104,9 +87,7 @@ def object_matches(obj: dict, requested: set[str]) -> bool:
     return bool(requested & {name for name in names if name})
 
 
-def build_command(
-    obj: dict, profile: dict | None = None, skip_existing: bool = False
-) -> list[str]:
+def build_command(obj: dict, profile: dict | None = None) -> list[str]:
     thresholds = merge_thresholds(obj, profile)
     prompts = profile.get("prompts") if profile else obj.get("prompts", [])
     if not prompts:
@@ -118,11 +99,11 @@ def build_command(
 
     cmd = [
         sys.executable,
-        str(TOOL_DIR / "detect_material_bgr.py"),
+        str(ROOT / "detect_material_bgr.py"),
         "--input-dir",
-        str(resolve_repo_path(input_dir)),
+        str(ROOT / input_dir),
         "--output-dir",
-        str(resolve_repo_path(output_dir)),
+        str(ROOT / output_dir),
         "--label",
         obj["label"],
         "--min-score",
@@ -209,23 +190,6 @@ def build_command(
         cmd.extend(
             ["--fill-convex-max-ratio", str(thresholds["fill_convex_max_ratio"])]
         )
-    if thresholds.get("front_priority"):
-        cmd.append("--front-priority")
-    if thresholds.get("front_priority_convex"):
-        cmd.append("--front-priority-convex")
-    if thresholds.get("front_priority_convex_max_ratio") is not None:
-        cmd.extend(
-            [
-                "--front-priority-convex-max-ratio",
-                str(thresholds["front_priority_convex_max_ratio"]),
-            ]
-        )
-    if thresholds.get("save_instance_masks"):
-        cmd.append("--save-instance-masks")
-    if thresholds.get("instance_boundary_gap") is not None:
-        cmd.extend(["--instance-boundary-gap", str(thresholds["instance_boundary_gap"])])
-    if skip_existing:
-        cmd.append("--skip-existing")
 
     if profile:
         if profile.get("pattern"):
@@ -234,8 +198,6 @@ def build_command(
             cmd.extend(["--image-list", str(resolve_config_path(profile["image_list"]))])
         for stem in profile.get("stems", []):
             cmd.extend(["--image-stem", stem])
-        for stem in profile.get("exclude_stems", []):
-            cmd.extend(["--exclude-stem", stem])
         for prefix in profile.get("sequence_prefixes", []):
             cmd.extend(["--include-prefix", prefix])
         if profile.get("min_stem"):
@@ -252,7 +214,7 @@ def build_command(
 def write_parameter_snapshots(config: dict, objects: list[dict]) -> None:
     OUT_DIR.mkdir(exist_ok=True)
     for obj in objects:
-        path = resolve_repo_path(obj["parameter_file"])
+        path = ROOT / obj["parameter_file"]
         path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "version": config["version"],
@@ -271,31 +233,20 @@ def write_parameter_snapshots(config: dict, objects: list[dict]) -> None:
         )
 
 
-def select_profiles(obj: dict, requested: set[str]) -> list[dict | None]:
-    profiles = load_parameter_files(obj) or [None]
-    if not requested:
-        return profiles
-    selected = [p for p in profiles if p and p.get("name") in requested]
-    return selected
+def clean_outputs(objects: list[dict]) -> None:
+    for obj in objects:
+        output_dir = ROOT / obj["output_dir"]
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
 
 
-def run_objects(
-    objects: list[dict],
-    requested_profiles: set[str] | None = None,
-    skip_existing: bool = False,
-) -> None:
+def run_objects(objects: list[dict]) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    requested_profiles = requested_profiles or set()
-    plan = [(obj, select_profiles(obj, requested_profiles)) for obj in objects]
-    total = sum(len(profiles) for _, profiles in plan)
-    if requested_profiles:
-        matched = {p["name"] for _, profiles in plan for p in profiles if p}
-        missing = sorted(requested_profiles - matched)
-        if missing:
-            raise SystemExit(f"unknown profile(s): {', '.join(missing)}")
+    total = sum(max(1, len(load_parameter_files(obj))) for obj in objects)
     index = 0
 
-    for obj, profiles in plan:
+    for obj in objects:
+        profiles = load_parameter_files(obj) or [None]
         for profile in profiles:
             index += 1
             profile_name = profile["name"] if profile else "all"
@@ -304,8 +255,8 @@ def run_objects(
             print(f"[{index}/{total}] {obj['label']} {profile_name}", flush=True)
             with log_path.open("w", encoding="utf-8") as log_file:
                 subprocess.run(
-                    build_command(obj, profile, skip_existing=skip_existing),
-                    cwd=REPO_ROOT,
+                    build_command(obj, profile),
+                    cwd=ROOT,
                     stdout=log_file,
                     stderr=subprocess.STDOUT,
                     check=True,
@@ -314,10 +265,7 @@ def run_objects(
 
 def main() -> None:
     args = parse_args()
-    config_path = (
-        args.config if args.config.is_absolute() else resolve_config_path(args.config)
-    )
-    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config = json.loads(args.config.read_text(encoding="utf-8"))
     labels = set(args.labels or [])
     objects = [
         obj
@@ -330,12 +278,10 @@ def main() -> None:
         raise SystemExit(f"unknown label(s): {', '.join(missing)}")
 
     write_parameter_snapshots(config, objects)
+    if args.clean:
+        clean_outputs(objects)
     if not args.write_params_only:
-        run_objects(
-            objects,
-            requested_profiles=set(args.profiles or []),
-            skip_existing=args.skip_existing,
-        )
+        run_objects(objects)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ import cv2
 import numpy as np
 
 
-DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "dataset" / "test"
+DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "sam3demo"
 DEFAULT_INTRINSICS = {
     "width": 1280,
     "height": 720,
@@ -157,36 +157,6 @@ def write_colored_pcd(path: Path, points: np.ndarray, colors_rgb: np.ndarray) ->
             f.write(f"{x:.6f} {y:.6f} {z:.6f} {rgb:.8e}\n")
 
 
-def write_binary_colored_pcd(path: Path, points: np.ndarray, colors_rgb: np.ndarray) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    rgb_uint = (
-        (colors_rgb[:, 0].astype(np.uint32) << 16)
-        | (colors_rgb[:, 1].astype(np.uint32) << 8)
-        | colors_rgb[:, 2].astype(np.uint32)
-    )
-    rgb_float = rgb_uint.view(np.float32)
-    rows = np.empty((len(points), 4), dtype=np.float32)
-    rows[:, :3] = points.astype(np.float32, copy=False)
-    rows[:, 3] = rgb_float
-
-    with path.open("wb") as f:
-        header = (
-            "# .PCD v0.7 - Point Cloud Data file format\n"
-            "VERSION 0.7\n"
-            "FIELDS x y z rgb\n"
-            "SIZE 4 4 4 4\n"
-            "TYPE F F F F\n"
-            "COUNT 1 1 1 1\n"
-            f"WIDTH {len(points)}\n"
-            "HEIGHT 1\n"
-            "VIEWPOINT 0 0 0 1 0 0 0\n"
-            f"POINTS {len(points)}\n"
-            "DATA binary\n"
-        )
-        f.write(header.encode("ascii"))
-        f.write(rows.tobytes())
-
-
 def find_frames(
     bgr_dir: Path,
     depth_dir: Path,
@@ -255,11 +225,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-depth", type=float, default=0.0)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument(
-        "--binary",
-        action="store_true",
-        help="Write binary PCD instead of ASCII PCD to reduce file size and write time.",
-    )
-    parser.add_argument(
         "--camera-frame",
         action="store_true",
         help="Keep x-right/y-down/z-forward instead of the historical y/z flipped PCD convention.",
@@ -315,10 +280,7 @@ def main() -> None:
             empty += 1
             continue
 
-        if args.binary:
-            write_binary_colored_pcd(pcd_path, points, colors)
-        else:
-            write_colored_pcd(pcd_path, points, colors)
+        write_colored_pcd(pcd_path, points, colors)
         print(f"PCD: {pcd_path} ({len(points)} points)")
         written += 1
 

@@ -8,10 +8,9 @@ import cv2
 import numpy as np
 
 
-TOOL_DIR = Path(__file__).resolve().parent
-DEFAULT_BAG_DIR = TOOL_DIR / "dataset" / "raw"
-DEFAULT_OUTPUT_ROOT = TOOL_DIR / "dataset" / "extracted"
-DEFAULT_MERGE_OUTPUT_DIR = TOOL_DIR / "dataset" / "merged"
+DEFAULT_BAG_DIR = Path("data")
+DEFAULT_OUTPUT_ROOT = Path("dataset")
+DEFAULT_MERGE_OUTPUT_DIR = Path("dataset_merged")
 DEFAULT_MERGE_DIRS = [
     "bgr",
     "depth",
@@ -40,29 +39,6 @@ def parse_args() -> argparse.Namespace:
         "--merge",
         action="store_true",
         help="Merge existing extracted datasets instead of extracting bag files.",
-    )
-    parser.add_argument(
-        "--renumber",
-        action="store_true",
-        help="Rename an existing dataset's bgr/depth/pcd files to sequential frame ids.",
-    )
-    parser.add_argument(
-        "--dataset-dir",
-        type=Path,
-        default=None,
-        help="Renumber mode: dataset directory containing bgr/depth.",
-    )
-    parser.add_argument(
-        "--start-index",
-        type=int,
-        default=0,
-        help="Renumber mode: first output frame index.",
-    )
-    parser.add_argument(
-        "--digits",
-        type=int,
-        default=6,
-        help="Renumber mode: zero-padding width for output frame ids.",
     )
     parser.add_argument("--bag-dir", type=Path, default=DEFAULT_BAG_DIR)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
@@ -100,8 +76,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Merge mode: optional name for the merged dataset folder. "
-            "Example: --merge-output dataset --merge-name "
-            "merged_demo creates dataset/merged_demo."
+            "Example: --merge-output ./out --merge-name merged_demo creates "
+            "./out/merged_demo."
         ),
     )
     parser.add_argument(
@@ -383,8 +359,8 @@ def copy_file_resumable(src: Path, dst: Path, overwrite: bool) -> str:
             shutil.copyfile(src, dst)
             return "overwritten"
         return "skipped_existing"
-    # Do not use shutil.copy2 here. On mounted external filesystems, copying
-    # file timestamps/permission metadata may fail with PermissionError.
+    # Do not use shutil.copy2 here. On Windows-mounted paths (e.g. WSL /mnt/*
+    # drives), copying file timestamps/permission metadata may fail with PermissionError.
     shutil.copyfile(src, dst)
     return "copied"
 
@@ -498,109 +474,10 @@ def merge_datasets(args: argparse.Namespace) -> None:
     print("Merge complete.")
 
 
-def collect_dataset_stems(dataset_dir: Path) -> dict[str, set[str]]:
-    suffixes = {
-        "bgr": ".png",
-        "depth": ".png",
-    }
-    stems_by_dir = {}
-    for rel_dir, suffix in suffixes.items():
-        directory = dataset_dir / rel_dir
-        if not directory.is_dir():
-            raise FileNotFoundError(f"missing required directory: {directory}")
-        stems_by_dir[rel_dir] = {
-            path.stem for path in directory.iterdir() if path.is_file() and path.suffix == suffix
-        }
-    return stems_by_dir
-
-
-def validate_common_stems(stems_by_dir: dict[str, set[str]]) -> list[str]:
-    common = set.intersection(*stems_by_dir.values())
-    problems = []
-    for rel_dir, stems in stems_by_dir.items():
-        missing = sorted(common - stems)
-        extra = sorted(stems - common)
-        if missing:
-            problems.append(f"{rel_dir} missing {len(missing)} common stems, e.g. {missing[:5]}")
-        if extra:
-            problems.append(f"{rel_dir} has {len(extra)} unmatched stems, e.g. {extra[:5]}")
-    if problems:
-        raise RuntimeError(
-            "bgr/depth are not aligned; refusing to renumber:\n"
-            + "\n".join(problems)
-        )
-    return sorted(common)
-
-
-def build_renumber_plan(
-    dataset_dir: Path, stems: list[str], start_index: int, digits: int
-) -> list[tuple[Path, Path, Path]]:
-    suffixes = {
-        "bgr": ".png",
-        "depth": ".png",
-    }
-    temp_prefix = f".renumber_tmp_{start_index}_{len(stems)}_"
-    plan = []
-    for idx, old_stem in enumerate(stems):
-        new_stem = f"{start_index + idx:0{digits}d}"
-        for rel_dir, suffix in suffixes.items():
-            src = dataset_dir / rel_dir / f"{old_stem}{suffix}"
-            tmp = dataset_dir / rel_dir / f"{temp_prefix}{idx:0{digits}d}{suffix}"
-            dst = dataset_dir / rel_dir / f"{new_stem}{suffix}"
-            plan.append((src, tmp, dst))
-    return plan
-
-
-def check_renumber_plan(plan: list[tuple[Path, Path, Path]]) -> None:
-    for src, tmp, _ in plan:
-        if not src.exists():
-            raise FileNotFoundError(f"missing source file: {src}")
-        if tmp.exists():
-            raise FileExistsError(f"temporary rename target already exists: {tmp}")
-
-
-def renumber_dataset(args: argparse.Namespace) -> None:
-    if args.dataset_dir is None:
-        raise ValueError("--dataset-dir is required with --renumber")
-    if args.start_index < 0:
-        raise ValueError("--start-index must be >= 0")
-    if args.digits < 1:
-        raise ValueError("--digits must be >= 1")
-
-    stems_by_dir = collect_dataset_stems(args.dataset_dir)
-    stems = validate_common_stems(stems_by_dir)
-    plan = build_renumber_plan(args.dataset_dir, stems, args.start_index, args.digits)
-    check_renumber_plan(plan)
-
-    action = "RENUMBER" if args.apply else "DRY RUN"
-    print(f"{action}: {args.dataset_dir}")
-    print(f"Frames: {len(stems)}")
-    print(f"Output range: {args.start_index:0{args.digits}d} - {args.start_index + len(stems) - 1:0{args.digits}d}")
-
-    preview_count = min(20, len(stems))
-    for idx in range(preview_count):
-        print(f"{stems[idx]} -> {args.start_index + idx:0{args.digits}d}")
-    if len(stems) > preview_count:
-        print(f"... {len(stems) - preview_count} more frames")
-
-    if not args.apply:
-        print("\nDry run only. Re-run with --apply to rename files.")
-        return
-
-    for src, tmp, _ in plan:
-        src.rename(tmp)
-    for _, tmp, dst in plan:
-        tmp.rename(dst)
-    print("Renumber complete.")
-
-
 def main() -> None:
     args = parse_args()
     if args.merge:
         merge_datasets(args)
-        return
-    if args.renumber:
-        renumber_dataset(args)
         return
 
     args.output_root.mkdir(parents=True, exist_ok=True)

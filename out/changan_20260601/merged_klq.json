@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-02 Changan material batch with confirmed names",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "空滤器进气连接管总成I",
+  "source_name": "klq",
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_klq/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_klq/sam3_segmentation",
+  "parameters": {
+    "label": "空滤器进气连接管总成I",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_klq/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_klq/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/merged_klq.json",
+    "thresholds": {
+      "min_score": 0.3,
+      "min_area_frac": 0.0003,
+      "max_area_frac": 0.18,
+      "max_bbox_fill_frac": 0.75,
+      "iou_dedup": 0.4,
+      "score_threshold_detection": 0.15,
+      "new_det_thresh": 0.25
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "black plastic engine air intake duct assembly",
+          "black automotive air filter housing",
+          "black plastic air cleaner assembly"
+        ]
+      }
+    ],
+    "source_name": "klq",
+    "legacy_labels": [
+      "merged_klq",
+      "空滤器进气连接管总成"
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "black plastic engine air intake duct assembly",
+        "black automotive air filter housing",
+        "black plastic air cleaner assembly"
+      ]
+    }
+  ]
+}

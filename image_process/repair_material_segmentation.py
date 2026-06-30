@@ -14,13 +14,9 @@ import sys
 import time
 from pathlib import Path
 
-from material_paths import REPO_ROOT, TOOL_DIR
-
-ROOT = TOOL_DIR
-if str(TOOL_DIR) not in sys.path:
-    sys.path.insert(0, str(TOOL_DIR))
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from detect_material_bgr import (  # noqa: E402  — its import already fixes sys.path for sam3
     build_predictor,
@@ -41,7 +37,7 @@ REPAIRS: list[dict] = [
     {
         "label": "空调新风口",
         "material": "fresh_air_vent",
-        "input_dir": ROOT / "dataset/空调新风口总成_906/bgr",
+        "input_dir": ROOT / "data/空调新风口总成_906/bgr",
         "output_dir": ROOT / "out/fresh_air_vent",
         "empty_list": ROOT / "out/_logs/_repair/fresh_air_vent_empty.txt",
         "thresholds": {
@@ -65,7 +61,7 @@ REPAIRS: list[dict] = [
     {
         "label": "保险杠",
         "material": "bumper_624",
-        "input_dir": ROOT / "dataset/前保险杠侧安装支架总成_624/bgr",
+        "input_dir": ROOT / "data/前保险杠侧安装支架总成_624/bgr",
         "output_dir": ROOT / "out/bumper_563",
         "empty_list": ROOT / "out/_logs/_repair/bumper_624_empty.txt",
         "thresholds": {
@@ -88,7 +84,7 @@ REPAIRS: list[dict] = [
     {
         "label": "背门自动开闭系统",
         "material": "power_tailgate_system_854",
-        "input_dir": ROOT / "dataset/背门自动开闭系统ECU控制器总成_854/bgr",
+        "input_dir": ROOT / "data/背门自动开闭系统ECU控制器总成_854/bgr",
         "output_dir": ROOT / "out/power_tailgate_system_797",
         "empty_list": ROOT / "out/_logs/_repair/power_tailgate_system_854_empty.txt",
         "thresholds": {
@@ -112,7 +108,7 @@ REPAIRS: list[dict] = [
     {
         "label": "三角牌",
         "material": "warning_triangle_486",
-        "input_dir": ROOT / "dataset/三角警告牌_486/bgr",
+        "input_dir": ROOT / "data/三角警告牌_486/bgr",
         "output_dir": ROOT / "out/warning_triangle_486",
         "empty_list": ROOT / "out/_logs/_repair/warning_triangle_486_empty.txt",
         "thresholds": {
@@ -137,7 +133,7 @@ REPAIRS: list[dict] = [
     {
         "label": "空滤器",
         "material": "air_filter",
-        "input_dir": ROOT / "dataset/空滤器进气连接管总成561",
+        "input_dir": ROOT / "data/空滤器进气连接管总成561",
         "output_dir": ROOT / "out/air_filter",
         "empty_list": ROOT / "out/_logs/_repair/air_filter_empty.txt",
         "thresholds": {
@@ -162,7 +158,7 @@ REPAIRS: list[dict] = [
     {
         "label": "副雨刮器",
         "material": "passenger_wiper_1113",
-        "input_dir": ROOT / "dataset/副雨刮器总成_1113/bgr",
+        "input_dir": ROOT / "data/副雨刮器总成_1113/bgr",
         "output_dir": ROOT / "out/passenger_wiper_1100",
         "empty_list": ROOT / "out/_logs/_repair/passenger_wiper_1113_empty.txt",
         "thresholds": {
@@ -189,7 +185,7 @@ REPAIRS: list[dict] = [
     {
         "label": "洗涤器水壶加注管总成",
         "material": "washer_filler_769",
-        "input_dir": ROOT / "dataset/洗涤器水壶加注管总成_769",
+        "input_dir": ROOT / "data/洗涤器水壶加注管总成_769",
         "output_dir": ROOT / "out/washer_filler_768",
         "empty_list": ROOT / "out/_logs/_repair/washer_filler_769_empty.txt",
         "thresholds": {
@@ -212,7 +208,7 @@ REPAIRS: list[dict] = [
     {
         "label": "泡沫块",
         "material": "foam_block_979",
-        "input_dir": ROOT / "dataset/后轮鼓包内后侧泡沫块_979/bgr",
+        "input_dir": ROOT / "data/后轮鼓包内后侧泡沫块_979/bgr",
         "output_dir": ROOT / "out/foam_block_979",
         "empty_list": ROOT / "out/_logs/_repair/foam_block_979_empty.txt",
         "thresholds": {
