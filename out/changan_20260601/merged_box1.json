@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-02 Changan material batch with confirmed names",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "料箱1",
+  "source_name": "box1",
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_box1/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_box1/sam3_segmentation",
+  "parameters": {
+    "label": "料箱1",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_box1/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_box1/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/merged_box1.json",
+    "thresholds": {
+      "min_score": 0.25,
+      "min_area_frac": 0.01,
+      "max_area_frac": 0.95,
+      "max_bbox_fill_frac": 0.98,
+      "iou_dedup": 0.4,
+      "max_instances": 1,
+      "score_threshold_detection": 0.1,
+      "new_det_thresh": 0.15
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "gray plastic storage crate",
+          "plastic parts bin",
+          "gray grid storage crate"
+        ]
+      }
+    ],
+    "source_name": "box1",
+    "legacy_labels": [
+      "merged_box1"
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "gray plastic storage crate",
+        "plastic parts bin",
+        "gray grid storage crate"
+      ]
+    }
+  ]
+}
