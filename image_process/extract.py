@@ -409,7 +409,7 @@ def write_merge_manifest(
     write_json(
         merge_output / "meta" / "merge_manifest.json",
         {
-            "layout": "merged_sam2_2d_to_3d_workflow_v1",
+            "layout": "merged_sam3_2d_to_3d_workflow_v1",
             "source_root": str(source_root),
             "output_dir": str(merge_output),
             "relative_dirs": rel_dirs,
