@@ -1,7 +1,8 @@
-"""Segment material images from dataset and save masks to out.
+"""Segment the washer-fluid filler pipe assembly in data/bgr images.
 
-This script runs the SAM 3.1 text-prompt flow for one target label, scoped to the PNG images under
-the configured bgr directory and saves both visual overlays and binary masks.
+This is a single-target variant of detect_materials.py. It keeps the same
+SAM 3.1 text-prompt flow, but is scoped to the PNG images under
+data/bgr and saves both visual overlays and binary masks.
 """
 
 from __future__ import annotations
@@ -12,18 +13,25 @@ import sys
 import tempfile
 from pathlib import Path
 
-from material_paths import DATA_DIR, OUT_DIR, REPO_ROOT
+ROOT = Path(__file__).resolve().parent
 
 # Keep imports bound to this fork's SAM3 package when the script is launched
 # from another working directory.
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import torch
 from PIL import Image
-from scipy import ndimage
-import cv2
+try:
+    from scipy import ndimage
+except ImportError:
+    ndimage = None
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 from sam3.model.sam3_multiplex_tracking import Sam3MultiplexTrackingWithInteractivity
 from sam3.model_builder import build_sam3_multiplex_video_predictor
@@ -39,9 +47,9 @@ def _init_state_compat(self, *args, **kwargs):
 
 Sam3MultiplexTrackingWithInteractivity.init_state = _init_state_compat
 
-CKPT = REPO_ROOT / "sam3.1_multiplex.pt"
-DEFAULT_INPUT_DIR = DATA_DIR / "bgr"
-DEFAULT_OUTPUT_DIR = OUT_DIR / "washer_filler_769"
+CKPT = ROOT / "sam3.1_multiplex.pt"
+DEFAULT_INPUT_DIR = ROOT / "data" / "bgr"
+DEFAULT_OUTPUT_DIR = ROOT / "out" / "washer_filler_769"
 
 DEFAULT_LABEL = "洗涤液加注管总成"
 DEFAULT_PROMPTS = [
@@ -60,7 +68,7 @@ MIN_AREA_FRAC = 3e-4
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Segment material images and save overlay/mask/metadata outputs."
+        description="Segment washer-fluid filler pipe assembly in data/bgr images."
     )
     parser.add_argument("--input-dir", type=Path, default=DEFAULT_INPUT_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
@@ -94,12 +102,6 @@ def parse_args() -> argparse.Namespace:
         action="append",
         dest="image_stems",
         help="Process an explicit image stem from --input-dir. Repeat for multiple stems.",
-    )
-    parser.add_argument(
-        "--exclude-stem",
-        action="append",
-        dest="exclude_stems",
-        help="Skip an explicit image stem after resolving the input image set. Repeat for multiple stems.",
     )
     parser.add_argument(
         "--limit",
@@ -262,30 +264,22 @@ def parse_args() -> argparse.Namespace:
         help="Only convex-hull a component when hull_area <= ratio * area.",
     )
     parser.add_argument(
-        "--fill-outer-contour",
+        "--exclude-bright-pixels",
         action="store_true",
-        help="Solidify each mask component to the region inside its external "
-        "contour. Fills a hollow crate (e.g. an open silver liner that "
-        "fill_holes cannot reach) while preserving the true crate outline, "
-        "unlike --fill-convex which cuts the rotated crate's corners.",
+        help="Remove bright low-saturation pixels from each mask, useful for "
+        "excluding white foam pads inside material boxes.",
     )
     parser.add_argument(
-        "--front-priority",
-        action="store_true",
-        help="For multiple crate-like instances, let the lower/front instance "
-        "claim ambiguous pixels before rear instances. Useful for occluded crates.",
+        "--bright-min-channel",
+        type=int,
+        default=145,
+        help="Minimum RGB channel value for --exclude-bright-pixels.",
     )
     parser.add_argument(
-        "--front-priority-convex",
-        action="store_true",
-        help="With --front-priority, convex-hull only the front-most instance "
-        "before subtracting it from rear instances.",
-    )
-    parser.add_argument(
-        "--front-priority-convex-max-ratio",
-        type=float,
-        default=2.5,
-        help="Convex hull guard used by --front-priority-convex.",
+        "--bright-max-channel-delta",
+        type=int,
+        default=70,
+        help="Maximum RGB channel spread for --exclude-bright-pixels.",
     )
     parser.add_argument("--score-threshold-detection", type=float, default=0.2)
     parser.add_argument("--new-det-thresh", type=float, default=0.3)
@@ -293,18 +287,6 @@ def parse_args() -> argparse.Namespace:
         "--skip-existing",
         action="store_true",
         help="Skip images whose overlay, mask, and metadata outputs already exist.",
-    )
-    parser.add_argument(
-        "--save-instance-masks",
-        action="store_true",
-        help="Also save non-overlapping per-instance label masks and colored instance overlays.",
-    )
-    parser.add_argument(
-        "--instance-boundary-gap",
-        type=int,
-        default=0,
-        help="When saving instance masks, clear this many pixels around boundaries "
-        "between touching instances. 0 keeps every foreground pixel assigned.",
     )
     return parser.parse_args()
 
@@ -331,80 +313,6 @@ def draw_contour(
     )
     out = rgb.copy()
     out[border] = color
-    return out
-
-
-INSTANCE_COLORS = [
-    np.array((255, 64, 64), dtype=np.uint8),
-    np.array((30, 144, 255), dtype=np.uint8),
-    np.array((40, 190, 90), dtype=np.uint8),
-    np.array((255, 180, 30), dtype=np.uint8),
-    np.array((180, 90, 255), dtype=np.uint8),
-]
-
-
-def make_instance_label_map(
-    masks: list[np.ndarray],
-    boundary_gap: int = 0,
-) -> np.ndarray:
-    """Create a non-overlapping 8-bit label image from per-instance masks."""
-    if not masks:
-        return np.zeros((0, 0), dtype=np.uint8)
-
-    height, width = masks[0].shape
-    label_map = np.zeros((height, width), dtype=np.uint8)
-    if len(masks) == 1:
-        label_map[masks[0]] = 1
-        return label_map
-
-    stack = np.stack([mask.astype(bool) for mask in masks], axis=0)
-    cover_count = stack.sum(axis=0)
-    unique = cover_count == 1
-    for index, mask in enumerate(stack, start=1):
-        label_map[unique & mask] = index
-
-    overlap = cover_count > 1
-    if np.any(overlap):
-        yy, xx = np.indices((height, width))
-        centers = []
-        for mask in stack:
-            bbox = mask_bbox(mask)
-            if bbox is None:
-                centers.append((width / 2.0, height / 2.0))
-                continue
-            x0, y0, x1, y1 = bbox
-            centers.append(((x0 + x1) / 2.0, (y0 + y1) / 2.0))
-        distances = []
-        for cx, cy in centers:
-            distances.append((xx - cx) ** 2 + (yy - cy) ** 2)
-        nearest = np.argmin(np.stack(distances, axis=0), axis=0).astype(np.uint8) + 1
-        label_map[overlap] = nearest[overlap]
-
-    if boundary_gap and boundary_gap > 0 and len(masks) > 1:
-        boundary = np.zeros((height, width), dtype=bool)
-        foreground = label_map > 0
-        boundary[:, 1:] |= (label_map[:, 1:] != label_map[:, :-1]) & foreground[:, 1:] & foreground[:, :-1]
-        boundary[1:, :] |= (label_map[1:, :] != label_map[:-1, :]) & foreground[1:, :] & foreground[:-1, :]
-        kernel = np.ones((boundary_gap, boundary_gap), dtype=np.uint8)
-        boundary = cv2.dilate(boundary.astype(np.uint8), kernel, iterations=1) > 0
-        label_map[boundary] = 0
-
-    return label_map
-
-
-def overlay_instance_labels(
-    rgb: np.ndarray,
-    label_map: np.ndarray,
-    alpha: float = 0.45,
-) -> np.ndarray:
-    out = rgb.copy()
-    for label_id in range(1, int(label_map.max()) + 1):
-        mask = label_map == label_id
-        if not np.any(mask):
-            continue
-        color = INSTANCE_COLORS[(label_id - 1) % len(INSTANCE_COLORS)]
-        out[mask] = (alpha * color + (1 - alpha) * rgb[mask]).astype(np.uint8)
-        out = draw_contour(out, mask, color, thickness=2)
     return out
 
 
@@ -537,11 +445,9 @@ def refine_mask(
     fill_holes: bool,
     fill_convex: bool = False,
     fill_convex_max_ratio: float = 1.35,
-    fill_outer_contour: bool = False,
 ) -> np.ndarray:
     """Bridge small gaps (binary closing), fill enclosed holes, optionally
-    replace each connected component with its convex hull or solidify it to its
-    outer contour.
+    replace each connected component with its convex hull.
 
     Makes a fragmented mask coherent again, e.g. a red warning-triangle case
     whose printed label / arrow / specular / recess regions were left as holes
@@ -554,16 +460,11 @@ def refine_mask(
     component that is far from convex (e.g. two touching cases forming a V) is
     left untouched instead of having the wedge between them filled with
     background.
-
-    fill_outer_contour fills the region enclosed by each component's external
-    contour. Unlike fill_convex it follows the mask's true boundary instead of
-    a convex hull, so it makes a hollow crate solid (filling an open silver
-    liner that binary_fill_holes cannot, because the liner opening leaks to the
-    exterior at the rim) WITHOUT cutting the rotated crate's corners off with a
-    convex diagonal.
     """
     out = mask
     if close_kernel and close_kernel > 0 and close_iterations > 0:
+        if ndimage is None:
+            raise ImportError("scipy is required when mask closing is enabled")
         # Pad so the closing's erosion step does not eat pixels off masks that
         # reach the image border.
         pad = close_kernel * close_iterations + 1
@@ -575,15 +476,12 @@ def refine_mask(
         )
         out = padded[pad:-pad, pad:-pad]
     if fill_holes:
+        if ndimage is None:
+            raise ImportError("scipy is required when fill_holes is enabled")
         out = ndimage.binary_fill_holes(out)
-    if fill_outer_contour:
-        filled = np.zeros(out.shape, dtype=np.uint8)
-        contours, _ = cv2.findContours(
-            out.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
-        cv2.drawContours(filled, contours, -1, color=1, thickness=cv2.FILLED)
-        out = filled > 0
     if fill_convex:
+        if cv2 is None:
+            raise ImportError("opencv-python is required when fill_convex is enabled")
         filled = np.zeros(out.shape, dtype=np.uint8)
         for ys, xs in connected_components(out):
             if len(xs) < 50:
@@ -609,6 +507,20 @@ def bbox_fill_fraction(mask: np.ndarray, bbox: list[int] | None = None) -> float
     x0, y0, x1, y1 = bbox
     bbox_area = max(1, (x1 - x0) * (y1 - y0))
     return float(mask.sum()) / float(bbox_area)
+
+
+def remove_bright_pixels(
+    mask: np.ndarray,
+    rgb: np.ndarray,
+    min_channel: int,
+    max_channel_delta: int,
+) -> np.ndarray:
+    rgb_min = rgb.min(axis=2)
+    rgb_max = rgb.max(axis=2)
+    bright_neutral = (rgb_min >= min_channel) & (
+        (rgb_max - rgb_min) <= max_channel_delta
+    )
+    return mask & ~bright_neutral
 
 
 def split_or_filter_components(
@@ -650,6 +562,9 @@ def split_mask_by_kmeans(
     gap_kernel: int,
     min_component_area: int,
 ) -> list[np.ndarray]:
+    if cv2 is None:
+        raise ImportError("opencv-python is required when kmeans splitting is enabled")
+
     ys, xs = np.nonzero(mask)
     if instances < 2 or len(xs) < max(instances, min_component_area):
         return [mask] if int(mask.sum()) else []
@@ -697,56 +612,6 @@ def split_mask_by_kmeans(
             return [mask] if int(mask.sum()) else []
 
     return ordered_components
-
-
-def apply_front_priority(
-    processed: list[tuple[np.ndarray, float, str]],
-    convex_front: bool,
-    convex_front_max_ratio: float,
-) -> list[tuple[np.ndarray, float, str]]:
-    """Prioritize the lower/front crate when two crates occlude each other."""
-    if len(processed) < 2:
-        return processed
-
-    bboxes = [mask_bbox(mask) for mask, _, _ in processed]
-    if any(bbox is None for bbox in bboxes):
-        return processed
-
-    order = sorted(
-        range(len(processed)),
-        key=lambda index: (
-            bboxes[index][3],
-            (bboxes[index][0] + bboxes[index][2]) / 2.0,
-        ),
-        reverse=True,
-    )
-
-    allocated: list[tuple[np.ndarray, float, str] | None] = [None] * len(processed)
-    occupied = np.zeros(processed[0][0].shape, dtype=bool)
-    for rank, index in enumerate(order):
-        mask, prob, prompt = processed[index]
-        mask = mask.copy()
-        if rank == 0 and convex_front:
-            mask = refine_mask(
-                mask,
-                close_kernel=0,
-                close_iterations=1,
-                fill_holes=False,
-                fill_convex=True,
-                fill_convex_max_ratio=convex_front_max_ratio,
-            )
-        mask &= ~occupied
-        if int(mask.sum()) == 0:
-            continue
-        allocated[index] = (mask, prob, prompt)
-        occupied |= mask
-
-    front_first = []
-    for index in order:
-        item = allocated[index]
-        if item is not None:
-            front_first.append(item)
-    return front_first
 
 
 def run_text_prompt(
@@ -806,14 +671,13 @@ def collect_detections(
     mask_close_iterations: int = 1,
     fill_convex: bool = False,
     fill_convex_max_ratio: float = 1.35,
-    fill_outer_contour: bool = False,
     kmeans_split_instances: int | None = None,
     kmeans_split_y_weight: float = 1.0,
     kmeans_split_gap_kernel: int = 0,
-    front_priority: bool = False,
-    front_priority_convex: bool = False,
-    front_priority_convex_max_ratio: float = 2.5,
-) -> tuple[np.ndarray, list[dict], list[np.ndarray]]:
+    exclude_bright_pixels: bool = False,
+    bright_min_channel: int = 145,
+    bright_max_channel_delta: int = 70,
+) -> tuple[np.ndarray, list[dict]]:
     image = Image.open(image_path).convert("RGB")
     rgb = np.array(image)
     height, width = rgb.shape[:2]
@@ -905,7 +769,7 @@ def collect_detections(
                 min_component_area=centerline_min_component_area,
                 min_aspect=centerline_min_aspect,
             )
-        if fill_holes or mask_close_kernel or fill_convex or fill_outer_contour:
+        if fill_holes or mask_close_kernel or fill_convex:
             mask = refine_mask(
                 mask,
                 close_kernel=mask_close_kernel,
@@ -913,7 +777,6 @@ def collect_detections(
                 fill_holes=fill_holes,
                 fill_convex=fill_convex,
                 fill_convex_max_ratio=fill_convex_max_ratio,
-                fill_outer_contour=fill_outer_contour,
             )
         if kmeans_split_instances is not None:
             masks = split_mask_by_kmeans(
@@ -933,16 +796,18 @@ def collect_detections(
         else:
             masks = [mask] if int(mask.sum()) else []
         for component_mask in masks:
+            if exclude_bright_pixels:
+                component_mask = remove_bright_pixels(
+                    component_mask,
+                    rgb,
+                    min_channel=bright_min_channel,
+                    max_channel_delta=bright_max_channel_delta,
+                )
             if int(component_mask.sum()) == 0:
                 continue
+            if int(component_mask.sum()) < min_area:
+                continue
             processed.append((component_mask, prob, prompt))
-
-    if front_priority:
-        processed = apply_front_priority(
-            processed,
-            convex_front=front_priority_convex,
-            convex_front_max_ratio=front_priority_convex_max_ratio,
-        )
 
     metadata = []
     for index, (mask, prob, prompt) in enumerate(processed, start=1):
@@ -962,8 +827,7 @@ def collect_detections(
     union = np.zeros((height, width), dtype=bool)
     for mask, _, _ in processed:
         union |= mask
-    instance_masks = [mask for mask, _, _ in processed]
-    return union, metadata, instance_masks
+    return union, metadata
 
 
 def save_outputs(
@@ -973,9 +837,6 @@ def save_outputs(
     prompts: list[str],
     union_mask: np.ndarray,
     metadata: list[dict],
-    instance_masks: list[np.ndarray] | None = None,
-    save_instance_masks: bool = False,
-    instance_boundary_gap: int = 0,
 ) -> None:
     overlay_dir = output_dir / "overlays"
     mask_dir = output_dir / "masks"
@@ -983,38 +844,18 @@ def save_outputs(
     overlay_dir.mkdir(parents=True, exist_ok=True)
     mask_dir.mkdir(parents=True, exist_ok=True)
     meta_dir.mkdir(parents=True, exist_ok=True)
-    instance_mask_dir = output_dir / "instance_masks"
-    instance_overlay_dir = output_dir / "instance_overlays"
-    if save_instance_masks:
-        instance_mask_dir.mkdir(parents=True, exist_ok=True)
-        instance_overlay_dir.mkdir(parents=True, exist_ok=True)
 
     rgb = np.array(Image.open(image_path).convert("RGB"))
+    overlay = overlay_mask(rgb, union_mask, COLOR, alpha=0.45)
+    overlay = draw_contour(overlay, union_mask, COLOR, thickness=2)
+    out_img = Image.fromarray(overlay)
+
     overlay_path = overlay_dir / f"{image_path.stem}_det.jpg"
     mask_path = mask_dir / f"{image_path.stem}_mask.png"
     meta_path = meta_dir / f"{image_path.stem}.json"
 
+    out_img.save(overlay_path, quality=92)
     Image.fromarray((union_mask.astype(np.uint8) * 255)).save(mask_path)
-    label_map = None
-    if save_instance_masks:
-        if instance_masks:
-            label_map = make_instance_label_map(
-                instance_masks,
-                boundary_gap=instance_boundary_gap,
-            )
-        else:
-            label_map = np.zeros(union_mask.shape, dtype=np.uint8)
-        instance_mask_path = instance_mask_dir / f"{image_path.stem}_instances.png"
-        instance_overlay_path = instance_overlay_dir / f"{image_path.stem}_instances.jpg"
-        Image.fromarray(label_map).save(instance_mask_path)
-        instance_overlay = overlay_instance_labels(rgb, label_map, alpha=0.45)
-        Image.fromarray(instance_overlay).save(instance_overlay_path, quality=92)
-    if label_map is not None and int(label_map.max()) > 1:
-        overlay = overlay_instance_labels(rgb, label_map, alpha=0.45)
-    else:
-        overlay = overlay_mask(rgb, union_mask, COLOR, alpha=0.45)
-        overlay = draw_contour(overlay, union_mask, COLOR, thickness=2)
-    Image.fromarray(overlay).save(overlay_path, quality=92)
     meta_path.write_text(
         json.dumps(
             {
@@ -1100,9 +941,6 @@ def resolve_images(args: argparse.Namespace) -> list[Path]:
         images = [image for image in images if image.stem >= args.min_stem]
     if args.max_stem:
         images = [image for image in images if image.stem <= args.max_stem]
-    if args.exclude_stems:
-        excluded = set(args.exclude_stems)
-        images = [image for image in images if image.stem not in excluded]
     if args.limit is not None:
         images = images[: args.limit]
     assert images, f"no images matched {args.input_dir / args.pattern}"
@@ -1137,7 +975,7 @@ def main() -> None:
             continue
 
         print(f"-> {image_path.name}")
-        union_mask, metadata, instance_masks = collect_detections(
+        union_mask, metadata = collect_detections(
             predictor=predictor,
             image_path=image_path,
             prompts=prompts,
@@ -1166,13 +1004,12 @@ def main() -> None:
             mask_close_iterations=args.mask_close_iterations,
             fill_convex=args.fill_convex,
             fill_convex_max_ratio=args.fill_convex_max_ratio,
-            fill_outer_contour=args.fill_outer_contour,
             kmeans_split_instances=args.kmeans_split_instances,
             kmeans_split_y_weight=args.kmeans_split_y_weight,
             kmeans_split_gap_kernel=args.kmeans_split_gap_kernel,
-            front_priority=args.front_priority,
-            front_priority_convex=args.front_priority_convex,
-            front_priority_convex_max_ratio=args.front_priority_convex_max_ratio,
+            exclude_bright_pixels=args.exclude_bright_pixels,
+            bright_min_channel=args.bright_min_channel,
+            bright_max_channel_delta=args.bright_max_channel_delta,
         )
         save_outputs(
             image_path=image_path,
@@ -1181,9 +1018,6 @@ def main() -> None:
             prompts=prompts,
             union_mask=union_mask,
             metadata=metadata,
-            instance_masks=instance_masks,
-            save_instance_masks=args.save_instance_masks,
-            instance_boundary_gap=args.instance_boundary_gap,
         )
 
     if skipped:

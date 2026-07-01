@@ -46,7 +46,7 @@ dev = [
     "gitpython==3.1.31",
     "yt-dlp",
     "pandas",
-    "opencv-python",
+    "opencv-python>=4.10,<4.12",
     "pycocotools",
     "numba",
     "python-rapidjson",
@@ -60,7 +60,7 @@ notebooks = [
     "ipympl",
     "pycocotools",
     "decord",
-    "opencv-python",
+    "opencv-python>=4.10,<4.12",
     "einops",
     "scikit-image",
     "scikit-learn",
@@ -77,10 +77,46 @@ train = [
     "scikit-image",
     "scikit-learn",
 ]
+image_process = [
+    "opencv-python>=4.10,<4.12",
+    "open3d>=0.19",
+    "pyrealsense2>=2.57",
+    "pycocotools>=2.0.11",
+    "matplotlib>=3.10",
+    "scipy>=1.15",
+    "scikit-learn>=1.7",
+    "pandas>=2.3",
+    "seaborn>=0.13",
+    "plotly>=6.7",
+    "pillow>=12",
+    "PyYAML>=6.0",
+    "ConfigArgParse>=1.7",
+    "polars>=1.39",
+    "requests>=2.28",
+    "psutil>=7.0",
+    "rich>=15.0",
+    "typer>=0.25",
+]
+image_process_sam = [
+    "torch>=2.10",
+    "torchvision>=0.25",
+    "hydra-core>=1.3",
+    "omegaconf>=2.3",
+    "safetensors>=0.7",
+    "einops>=0.8",
+]
+label_studio = [
+    "label-studio",
+    "label-studio-converter",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/facebookresearch/sam3"
 "Bug Tracker" = "https://github.com/facebookresearch/sam3/issues"
+
+[tool.image_process.environments]
+hangcha = "image_process/envs/hangcha.yml"
+sam = "image_process/envs/sam.yml"
 
 [tool.setuptools.packages.find]
 include = ["sam3*"]

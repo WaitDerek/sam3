@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-02 Changan material batch with confirmed names",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "低音电喇叭总成",
+  "source_name": "dydlb",
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_dydlb/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_dydlb/sam3_segmentation",
+  "parameters": {
+    "label": "低音电喇叭总成",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_dydlb/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_dydlb/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/merged_dydlb.json",
+    "thresholds": {
+      "min_score": 0.25,
+      "min_area_frac": 0.0005,
+      "max_area_frac": 0.12,
+      "max_bbox_fill_frac": 0.9,
+      "iou_dedup": 0.4,
+      "score_threshold_detection": 0.12,
+      "new_det_thresh": 0.18
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "black circular automotive horn",
+          "automotive low-tone horn assembly",
+          "black round electric horn for car"
+        ]
+      }
+    ],
+    "source_name": "dydlb",
+    "legacy_labels": [
+      "merged_dydlb"
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "black circular automotive horn",
+        "automotive low-tone horn assembly",
+        "black round electric horn for car"
+      ]
+    }
+  ]
+}

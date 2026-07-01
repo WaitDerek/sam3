@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "updated_for": "2026-06-01 Changan material batch on E drive",
+  "runner": {
+    "script": "detect_material_bgr.py",
+    "checkpoint": "sam3.1_multiplex.pt"
+  },
+  "material": "车标",
+  "source_name": null,
+  "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_cb/bgr",
+  "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_cb/sam3_segmentation",
+  "parameters": {
+    "label": "车标",
+    "input_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_cb/bgr",
+    "output_dir": "/mnt/e/项目-长安汽车-2026/物料/merged_cb/sam3_segmentation",
+    "parameter_file": "out/changan_20260601/车标.json",
+    "thresholds": {
+      "min_score": 0.3,
+      "min_area_frac": 0.0001,
+      "max_area_frac": 0.08,
+      "max_bbox_fill_frac": 0.95,
+      "iou_dedup": 0.4,
+      "score_threshold_detection": 0.12,
+      "new_det_thresh": 0.2
+    },
+    "profiles": [
+      {
+        "name": "default",
+        "prompts": [
+          "chrome automotive emblem",
+          "silver car badge",
+          "metallic car logo emblem"
+        ]
+      }
+    ]
+  },
+  "loaded_parameter_files": [
+    {
+      "name": "default",
+      "prompts": [
+        "chrome automotive emblem",
+        "silver car badge",
+        "metallic car logo emblem"
+      ]
+    }
+  ]
+}
