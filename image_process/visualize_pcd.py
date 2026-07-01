@@ -1,7 +1,13 @@
 import argparse
 from pathlib import Path
 
+import numpy as np
 import open3d as o3d
+
+try:
+    import cv2
+except ImportError:  # pragma: no cover - optional rendering fallback
+    cv2 = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,9 +76,15 @@ def save_screenshot(
 ) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     vis = o3d.visualization.Visualizer()
-    vis.create_window(window_name="PCD render", visible=visible)
+    created = vis.create_window(window_name="PCD render", visible=visible)
     vis.add_geometry(cloud)
     opt = vis.get_render_option()
+    if not created or opt is None:
+        vis.destroy_window()
+        if visible:
+            raise RuntimeError("Open3D could not create a visible render window.")
+        save_projection_screenshot(cloud, out_path, point_size, background)
+        return
     opt.point_size = point_size
     opt.background_color = (0, 0, 0) if background == "black" else (1, 1, 1)
     vis.poll_events()
@@ -80,6 +92,53 @@ def save_screenshot(
     vis.capture_screen_image(str(out_path), do_render=True)
     vis.destroy_window()
     print(f"Saved screenshot: {out_path}")
+
+
+def save_projection_screenshot(
+    cloud: o3d.geometry.PointCloud,
+    out_path: Path,
+    point_size: float,
+    background: str,
+) -> None:
+    if cv2 is None:
+        raise RuntimeError(
+            "Open3D could not create an offscreen context, and cv2 is not installed "
+            "for fallback projection rendering."
+        )
+
+    points = np.asarray(cloud.points)
+    if points.size == 0:
+        raise RuntimeError("pcd has no points to render.")
+
+    width = height = 1000
+    bg_value = 0 if background == "black" else 255
+    canvas = np.full((height, width, 3), bg_value, dtype=np.uint8)
+    xy = points[:, :2].astype(np.float32)
+    xy_min = xy.min(axis=0)
+    xy_max = xy.max(axis=0)
+    span = np.maximum(xy_max - xy_min, 1e-6)
+    norm = (xy - xy_min) / span
+    pixels = np.column_stack(
+        [
+            40 + norm[:, 0] * (width - 80),
+            height - 40 - norm[:, 1] * (height - 80),
+        ]
+    ).round().astype(np.int32)
+
+    if cloud.has_colors():
+        colors = (np.asarray(cloud.colors) * 255.0).clip(0, 255).astype(np.uint8)
+        colors_bgr = colors[:, ::-1]
+    else:
+        value = 255 if background == "black" else 0
+        colors_bgr = np.full((len(points), 3), value, dtype=np.uint8)
+
+    radius = max(1, int(round(point_size)))
+    for (x, y), color in zip(pixels, colors_bgr):
+        if 0 <= x < width and 0 <= y < height:
+            cv2.circle(canvas, (int(x), int(y)), radius, tuple(int(c) for c in color), -1)
+
+    cv2.imwrite(str(out_path), canvas)
+    print(f"Saved fallback projection screenshot: {out_path}")
 
 
 def main() -> None:
