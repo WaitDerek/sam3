@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61,<81", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -29,7 +29,8 @@ dependencies = [
     "numpy>=1.26,<2",
     "tqdm",
     "ftfy==6.1.1",
-    "regex",
+    "regex>=2024.11.6",
+    "setuptools>=61,<81",
     "iopath>=0.1.10",
     "typing_extensions",
     "huggingface_hub",
@@ -104,6 +105,7 @@ image_process_sam = [
     "omegaconf>=2.3",
     "safetensors>=0.7",
     "einops>=0.8",
+    "triton>=3.6; platform_system == 'Linux'",
 ]
 label_studio = [
     "label-studio",

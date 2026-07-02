@@ -10,8 +10,6 @@ separate each visible object, do not merge touching objects
 if heavily occluded and object boundary is unclear, return no target
 ```
 
-## 黑色小件与塑料件
-
 ### 1. 空滤器进气连接管总成
 
 ```text
