@@ -5,8 +5,32 @@
 """Triton kernel for euclidean distance transform (EDT)"""
 
 import torch
-import triton
-import triton.language as tl
+
+try:
+    import triton
+    import triton.language as tl
+except ModuleNotFoundError:
+    triton = None
+
+    class _TritonLanguageStub:
+        constexpr = object
+
+    tl = _TritonLanguageStub()
+
+try:
+    import cv2
+except ImportError:  # pragma: no cover - optional CPU fallback dependency
+    cv2 = None
+
+import numpy as np
+
+_HAS_TRITON = triton is not None
+
+
+def _triton_jit(fn):
+    if _HAS_TRITON:
+        return triton.jit(fn)
+    return fn
 
 """
 Disclaimer: This implementation is not meant to be extremely efficient. A CUDA kernel would likely be more efficient.
@@ -52,7 +76,7 @@ Overall, despite being quite naive, this implementation is roughly 5.5x faster t
 """
 
 
-@triton.jit
+@_triton_jit
 def edt_kernel(inputs_ptr, outputs_ptr, v, z, height, width, horizontal: tl.constexpr):
     # This is a somewhat verbatim implementation of the efficient 1D EDT algorithm described above
     # It can be applied horizontally or vertically depending if we're doing the first or second stage.
@@ -116,6 +140,20 @@ def edt_kernel(inputs_ptr, outputs_ptr, v, z, height, width, horizontal: tl.cons
         tl.store(outputs_ptr + block_start + (q * stride), old_value + d * d)
 
 
+def _edt_opencv(data: torch.Tensor) -> torch.Tensor:
+    if cv2 is None:
+        raise RuntimeError(
+            "Triton is not installed and OpenCV is unavailable for CPU EDT fallback."
+        )
+
+    masks = data.detach().to(device="cpu", dtype=torch.bool).numpy()
+    outputs = [
+        cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE)
+        for mask in masks
+    ]
+    return torch.from_numpy(np.stack(outputs).astype(np.float32)).to(device=data.device)
+
+
 def edt_triton(data: torch.Tensor):
     """
     Computes the Euclidean Distance Transform (EDT) of a batch of binary images.
@@ -128,7 +166,8 @@ def edt_triton(data: torch.Tensor):
         It should be equivalent to a batched version of cv2.distanceTransform(input, cv2.DIST_L2, 0)
     """
     assert data.dim() == 3
-    assert data.is_cuda
+    if not _HAS_TRITON or not data.is_cuda:
+        return _edt_opencv(data)
     B, H, W = data.shape
     data = data.contiguous()
 
